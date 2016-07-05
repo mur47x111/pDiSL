@@ -1,0 +1,6 @@
+lib/ant/ant-contrib.jar
+lib/ant/ivy.jar
+lib/disl/asm-debug-all.jar
+lib/disl/log4j.jar
+lib/test/hamcrest-core.jar
+lib/test/junit.jar

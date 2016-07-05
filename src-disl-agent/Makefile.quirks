@@ -1,0 +1,13 @@
+#
+# This file is intended to contain variable assignments that can fix
+# various quirks, mostly related to specific (local) compilers. Compared
+# to Makefile.local, this file is included much later, just before the 
+# definition of recipes. This allows modifying some of the variables
+# that contribute to the recipe definition.
+#
+# For example, older GCC compilers have trouble with the -flto option.
+# To fix this locally without having to modify the main Makefile, just
+# uncomment the following two lines.
+#
+#CFLAGS_PARTS :=
+#CFLAGS_WHOLE :=

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module
+	version="2.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd"
+>
+
+	<info organisation="ch.usi.dag" module="disl"/>
+
+	<configurations>
+		<conf name="ant" description="Libraries needed by Ant" />
+		<conf name="disl" description="Libraries needed by DiSL" />
+		<conf name="test" description="Libraries needed for testing" />
+		<conf name="devel" description="Files useful for development" />
+	</configurations>
+
+	<dependencies>
+		<!-- Build system libraries: no need for sources/javadoc -->
+		<dependency org="${ant-contrib.org}" name="ant-contrib" rev="${ant-contrib.rev}" conf="ant->master" />
+
+		<!-- Test libraries -->
+		<dependency org="${junit.org}" name="junit" rev="${junit.rev}" conf="test->default;devel->sources,javadoc" />
+
+		<!-- DiSL libraries -->
+		<dependency org="${asm.org}" name="asm-debug-all" rev="${asm.rev}" conf="disl->default;devel->sources,javadoc" />
+		<dependency org="${log4j.org}" name="log4j" rev="${log4j.rev}" conf="disl->default;devel->sources,javadoc" />
+	</dependencies>
+
+</ivy-module>

@@ -1,0 +1,15 @@
+This directory contains libraries required for DiSL compilation. Initially, it
+only contains this README and the 'artifacts.lst' file which contains a list
+of expected dependency artifacts. When building DiSL using Ant, the
+dependencies will be automatically downloaded using the Ivy dependency
+manager. The retrieval of dependencies can be forced by running 'ant
+download-deps' from the project's base directory.
+
+After downloading the dependencies, this directory will contain several
+subdirectories with artifacts required by the build process. The contents of
+those directories will be checked against the contents of 'artifacts.lst'
+during build initialization to make sure that all required dependencies are
+present before starting the build.
+
+The contents of this directory are not affected when running 'ant clean' and
+have to be cleaned explicitly using 'ant clean-deps'.
