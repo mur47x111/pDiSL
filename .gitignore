@@ -2,3 +2,5 @@ output
 lib
 libdislagent.jnilib
 libdislreagent.jnilib
+.idea
+*.iml
