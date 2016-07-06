@@ -1055,6 +1055,16 @@
 	<target name="release" depends="doc,release-bin,release-src" description="Produces DiSL source and binary release archives."/>
 
 
+	<!-- Run target -->
+	<target name="run-debug" depends="build">
+		<exec executable="java">
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar:./example-inst.jar" />
+			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
 	<!-- Clean up -->
 
 	<target name="clean-examples">
