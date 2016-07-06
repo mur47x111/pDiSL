@@ -4,3 +4,5 @@ libdislagent.jnilib
 libdislreagent.jnilib
 .idea
 *.iml
+examples/*/build
+out
