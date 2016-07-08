@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -167,12 +170,27 @@ final class RequestProcessor {
     //
 
     public static RequestProcessor newInstance () throws DiSLException {
+        return  newInstanceWithJARPaths(null);
+    }
+
+    public static RequestProcessor newInstanceWithJARUrl(URL url) throws DiSLException {
+        return newInstanceWithJARPaths(Arrays.asList(url));
+    }
+
+    public static RequestProcessor newInstanceWithJARPaths(List<URL> urls) throws DiSLException{
         // TODO LB: Configure bypass on a per-request basis.
         if (disableBypass) {
             System.setProperty ("disl.disablebypass", "true");
         }
 
-        final DiSL disl = DiSL.init ();
+        final DiSL disl;
+
+        if (urls == null || urls.isEmpty()){
+            disl = DiSL.init ();
+        }else{
+            disl = DiSL.initWithInstrumentationJars(urls);
+        }
+
         return new RequestProcessor (disl);
     }
 

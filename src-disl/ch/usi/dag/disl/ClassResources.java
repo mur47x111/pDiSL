@@ -1,7 +1,9 @@
 package ch.usi.dag.disl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,12 +13,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ch.usi.dag.disl.util.Logging;
+import ch.usi.dag.disl.util.Pair;
 import ch.usi.dag.util.logging.Logger;
 
 
@@ -80,6 +84,12 @@ final class ClassResources {
             .distinct ();
     }
 
+    public Stream <Pair<String, URL>> classUrlPairs() {
+        return __manifests.stream()
+                .flatMap(DislManifest::classAndLoadUrl)
+                .distinct();
+    }
+
     //
 
     /**
@@ -88,15 +98,26 @@ final class ClassResources {
      * used to initialize a {@link DiSL} instance.
      */
     public static final ClassResources discover (final Properties properties) {
+        return discoverWithInstrumentJars(properties, null);
+    }
+
+    public static final ClassResources discoverWithInstrumentJars(final Properties properties, final List<URL> jarUrls){
         final Logger log = Logging.getPackageInstance ();
 
         // Get class names from manifests in the class path.
         final ManifestLoader ml = new ManifestLoader (log);
-        final List <DislManifest> manifests = ml.loadAll ();
+        final List <DislManifest> manifests;
+
+        if (jarUrls == null || jarUrls.isEmpty())
+            manifests = ml.loadAllClasspath();
+        else
+            manifests = ml.loadAllJarUrls(jarUrls);
+
+        log.debug("manifests: %s", manifests);
 
         // Get class names from system properties.
         final List <String> dislClasses = __getClassNames (
-            Optional.ofNullable (properties.getProperty (__PROP_DISL_CLASSES__))
+                Optional.ofNullable (properties.getProperty (__PROP_DISL_CLASSES__))
         );
 
         manifests.add (new DislManifest (dislClasses));
@@ -126,16 +147,34 @@ final class ClassResources {
             __log = log;
         }
 
+        List <DislManifest> loadAllJarUrls(List<URL> manifests){
+            return __loadFromStream(
+                    manifests.stream()
+                            .map(url -> __loadManifestForJarURL(url))
+            );
+        }
+
         //
 
-        List <DislManifest> loadAll () {
+//        For backwards compatability
+        List <DislManifest> loadAll (){
+            return loadAllClasspath();
+        }
+
+        List <DislManifest> loadAllClasspath () {
             // Avoid parallel streams to keep order of transformers consistent.
-            return __manifestUrlStream ()
-                .map (url -> __loadManifest (url))
-                .filter (Optional::isPresent)
-                .map (Optional::get)
-                .filter (m -> !m.isEmpty ())
-                .collect (Collectors.toList ());
+            return __loadFromStream(
+                    __manifestUrlStream ()
+                    .map (url -> __loadManifestFileUrl (url))
+                    );
+        }
+
+        private List <DislManifest> __loadFromStream (Stream <Optional <DislManifest>> manifestStream) {
+            return manifestStream
+                    .filter (Optional::isPresent)
+                    .map (Optional::get)
+                    .filter (m -> !m.isEmpty ())
+                    .collect (Collectors.toList ());
         }
 
 
@@ -151,37 +190,60 @@ final class ClassResources {
             } catch (final IOException ioe) {
                 __log.warn (ioe, "failed to enumerate manifest resources");
             }
-
+// [
+// jar:file:/System/Library/Java/Extensions/MRJToolkit.jar!/META-INF/MANIFEST.MF,
+// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/output/lib/disl-server.jar!/META-INF/MANIFEST.MF,
+// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/output/lib/asm-debug-all.jar!/META-INF/MANIFEST.MF,
+// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/example-inst.jar!/META-INF/MANIFEST.MF
+// ]
+//            __log.debug("result: %s", result);
             return result.stream ();
         }
 
-        private Optional <DislManifest> __loadManifest (final URL url) {
+        private Optional <DislManifest> __loadManifestFileUrl (final URL url) {
             try (
-                final InputStream is = url.openStream ();
+                    final InputStream is = url.openStream ();
             ) {
-                final Manifest manifest = new Manifest (is);
-
-                //
-                // Extract DiSL and transformer class names from the manifest.
-                // Merge classes from DiSL-Transformer and DiSL-Transformers.
-                //
-                final Optional <Attributes> attrs = Optional.ofNullable (manifest.getMainAttributes ());
-                final List <String> classes = __getClasses (attrs, __ATTR_DISL_CLASSES__);
-                final List <String> transformers = __getClasses (attrs, __ATTR_DISL_TRANSFORMER__);
-                transformers.addAll (__getClasses (attrs, __ATTR_DISL_TRANSFORMERS__));
-
-                __log.debug (
-                    "loaded %s, classes [%s], transformers [%s]",
-                    url, String.join (",", classes), String.join (",", transformers)
-                );
-
-                return Optional.of (new DislManifest (url, classes, transformers));
+                final Manifest manifest = new Manifest(is);
+                return __loadManifest(manifest, url, false);
 
             } catch (final IOException ioe) {
                 __log.warn (ioe, "failed to load manifest at %s", url);
             }
-
             return Optional.empty ();
+        }
+
+        private Optional <DislManifest> __loadManifestForJarURL(URL url) {
+            try {
+
+                JarFile jarFile = new JarFile(new File(url.toURI()));
+                Manifest manifest = jarFile.getManifest();
+                return __loadManifest(manifest, url, true);
+
+            } catch (final IOException ioe){
+                __log.warn (ioe, "failed to load manifest for JAR file: %s", url);
+            } catch (final URISyntaxException use){
+                __log.warn (use, "failed to load manifest for JAR file: %s", url);
+            }
+            return Optional.empty ();
+        }
+
+        private Optional <DislManifest> __loadManifest (final Manifest manifest, final URL url, boolean isDynamicallyLoaded) {
+            //
+            // Extract DiSL and transformer class names from the manifest.
+            // Merge classes from DiSL-Transformer and DiSL-Transformers.
+            //
+            final Optional <Attributes> attrs = Optional.ofNullable (manifest.getMainAttributes ());
+            final List <String> classes = __getClasses (attrs, __ATTR_DISL_CLASSES__);
+            final List <String> transformers = __getClasses (attrs, __ATTR_DISL_TRANSFORMER__);
+            transformers.addAll (__getClasses (attrs, __ATTR_DISL_TRANSFORMERS__));
+
+            __log.debug (
+                    "loaded %s, classes [%s], transformers [%s]",
+                    url, String.join (",", classes), String.join (",", transformers)
+            );
+
+            return Optional.of (new DislManifest (url, classes, transformers, isDynamicallyLoaded));
         }
 
 
@@ -195,15 +257,17 @@ final class ClassResources {
         final Optional <URL> __url;
         final List <String> __classes;
         final List <String> __transformers;
+        final boolean __isDynamicallyLoaded;
 
         DislManifest (final List <String> classes) {
-            this (null, classes, Collections.emptyList ());
+            this (null, classes, Collections.emptyList (), false);
         }
 
-        DislManifest (final URL url, final List <String> classes, final List <String> transformers) {
+        DislManifest (final URL url, final List <String> classes, final List <String> transformers, boolean isDynamicallyLoaded) {
             __url = Optional.ofNullable (url);
             __classes = Objects.requireNonNull (classes);
             __transformers = Objects.requireNonNull (transformers);
+            __isDynamicallyLoaded = isDynamicallyLoaded;
         }
 
         //
@@ -211,6 +275,20 @@ final class ClassResources {
 
         Stream <String> classes () {
             return __classes.stream ();
+        }
+
+        Stream <Pair <String, URL>> classAndLoadUrl (){
+            List<Pair<String, URL>> list = new ArrayList<>();
+            if (isDynamicallyLoaded()) {
+                for (String className : __classes) {
+                    list.add(new Pair<String, URL>(className, __url.isPresent() ? __url.get() : null));
+                }
+            }else{
+                for (String className : __classes) {
+                    list.add(new Pair<String, URL>(className, null));
+                }
+            }
+            return list.stream();
         }
 
         Stream <String> transformers () {
@@ -228,6 +306,8 @@ final class ClassResources {
         Optional <URL> resource () {
             return __url;
         }
+
+        boolean isDynamicallyLoaded () { return __isDynamicallyLoaded; }
 
     }
 }

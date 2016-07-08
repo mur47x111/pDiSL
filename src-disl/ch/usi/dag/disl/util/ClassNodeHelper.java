@@ -2,6 +2,8 @@ package ch.usi.dag.disl.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -76,6 +78,12 @@ public enum ClassNodeHelper {
     public ClassNode load (final String className) throws IOException {
         final ClassNode result = new ClassNode (Opcodes.ASM5);
         new ClassReader (className).accept (result, __flags);
+        return result;
+    }
+
+    public ClassNode loadFromURL(final String className, URL jarBaseUrl) throws IOException, URISyntaxException{
+        final ClassNode result = new ClassNode(Opcodes.ASM5);
+        ClassReaderOTF.getClassReader(className, jarBaseUrl).accept(result, __flags);
         return result;
     }
 

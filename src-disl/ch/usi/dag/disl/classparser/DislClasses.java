@@ -1,10 +1,12 @@
 package ch.usi.dag.disl.classparser;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ch.usi.dag.disl.util.Pair;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -40,7 +42,7 @@ public final class DislClasses {
     //
 
     public static DislClasses load (
-        final Set <CodeOption> options, final Stream <String> classNames
+        final Set <CodeOption> options, final Stream <Pair<String, URL>> classNamesAndUrls
     ) throws ParserException, StaticContextGenException, ReflectionException,
     ProcessorException {
         //
@@ -48,8 +50,8 @@ public final class DislClasses {
         // parse them as snippets or argument processors depending on the
         // annotations associated with each class.
         //
-        final List <ClassNode> classNodes = classNames
-            .map (className -> __createClassNode (className))
+        final List <ClassNode> classNodes = classNamesAndUrls
+            .map (classNameAndUrl -> __createClassNode (classNameAndUrl.getFirst(), classNameAndUrl.getSecond()))
             .collect (Collectors.toList ());
 
         if (classNodes.isEmpty ()) {
@@ -99,14 +101,18 @@ public final class DislClasses {
     }
 
 
-    private static ClassNode __createClassNode (final String className) {
+    private static ClassNode __createClassNode (final String className, final URL loadUrl) {
         //
         // Parse input stream into a class node. Include debug information so
         // that we can report line numbers in case of problems in DiSL classes.
         // Re-throw any exceptions as DiSL initialization exceptions.
         //
         try {
-            return ClassNodeHelper.SNIPPET.load (className);
+            if (loadUrl != null){
+                return ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
+            }else{
+                return ClassNodeHelper.SNIPPET.load (className);
+            }
 
         } catch (final Exception e) {
             throw new InitializationException (

@@ -3,9 +3,7 @@ package ch.usi.dag.dislserver;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
+import java.net.*;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -14,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import ch.usi.dag.disl.exception.DiSLException;
 import ch.usi.dag.disl.util.Logging;
 import ch.usi.dag.util.logging.Logger;
 
@@ -46,30 +45,32 @@ public final class DiSLServer {
     private final AtomicInteger __workerCount = new AtomicInteger ();
     private final CounterSet <ElapsedTime> __globalStats = new CounterSet <ElapsedTime> (ElapsedTime.class);
 
+
+//    TODO: Remove
+static int i = 0;
+
     //
 
     final class ConnectionHandler implements Runnable {
 
         private final SocketChannel __clientSocket;
-        private final RequestProcessor __requestProcessor;
         private final Thread __serverThread;
 
         //
 
         ConnectionHandler (
             final SocketChannel clientSocket,
-            final RequestProcessor requestProcessor,
             final Thread serverThread
         ) {
             __clientSocket = clientSocket;
-            __requestProcessor = requestProcessor;
             __serverThread = serverThread;
         }
+
 
         @Override
         public void run () {
             __workerCount.incrementAndGet ();
-
+            RequestProcessor __requestProcessor = null;
             try (
                 final MessageChannel mc = new MessageChannel (__clientSocket);
             ) {
@@ -79,8 +80,26 @@ public final class DiSLServer {
                 //
                 final CounterSet <ElapsedTime> stats = new CounterSet  <ElapsedTime> (ElapsedTime.class);
                 final IntervalTimer <ElapsedTime> timer = new IntervalTimer <ElapsedTime> (ElapsedTime.class);
+                boolean shouldRequestLoop = true;
+//                TODO: Remove
+//                This is currently simply a test to see if we can use multiple instrument jar files
+                URL jarUrl = new File("example-inst" + ((i == 0) ? "" : "1") + ".jar").toURI().toURL();
 
-                REQUEST_LOOP: while (true) {
+                try {
+                    final Message request = mc.recvMessage ();
+                    __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
+                } catch (final DiSLException de) {
+                    //
+                    // Error creating request processor. Report it to the client
+                    // and stop receiving requests from this connection.
+                    //
+                    mc.sendMessage (
+                            Message.createErrorResponse (de.getMessage ())
+                    );
+                    shouldRequestLoop = false;
+                }
+
+                REQUEST_LOOP: while (shouldRequestLoop) {
                     timer.reset ();
 
                     final Message request = mc.recvMessage ();
@@ -110,7 +129,7 @@ public final class DiSLServer {
                         // and stop receiving requests from this connection.
                         //
                         mc.sendMessage (
-                            Message.createErrorResponse (dse.getMessage ())
+                                Message.createErrorResponse (dse.getMessage ())
                         );
 
                         break REQUEST_LOOP;
@@ -130,7 +149,12 @@ public final class DiSLServer {
                 __log.error (
                     "error communicating with client: %s", ioe.getMessage ()
                 );
+            } finally {
+//            Terminate the RequestProcessor
+                if (__requestProcessor != null)
+                    __requestProcessor.terminate();
             }
+
 
             //
             // If there are no more workers left and we are not operating
@@ -146,11 +170,9 @@ public final class DiSLServer {
     }
 
     //
-
     void run (
         final ServerSocketChannel serverSocket,
-        final ExecutorService executor,
-        final RequestProcessor requestProcessor
+        final ExecutorService executor
     ) {
         try {
             final Thread serverThread = Thread.currentThread ();
@@ -162,11 +184,13 @@ public final class DiSLServer {
                 __log.debug (
                     "connection from %s", clientSocket.getRemoteAddress ()
                 );
-
                 // client socket handed off to connection handler
                 executor.submit (new ConnectionHandler (
-                    clientSocket, requestProcessor, serverThread
+                    clientSocket, serverThread
                 ));
+
+//                TODO: Remove - part of test
+                i++;
             }
 
         } catch (final ClosedByInterruptException cbie) {
@@ -209,18 +233,16 @@ public final class DiSLServer {
 
         //
 
-        final RequestProcessor processor = __getRequestProcessorOrDie ();
         final ExecutorService executor = Executors.newCachedThreadPool ();
         final DiSLServer server = new DiSLServer ();
 
         __log.debug ("server started");
         __serverStarted ();
 
-        server.run (socket, executor, processor);
+        server.run (socket, executor);
 
         __log.debug ("server shutting down");
         executor.shutdown ();
-        processor.terminate ();
         __closeSocket (socket);
 
         __log.debug ("server finished");

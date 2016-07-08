@@ -3,6 +3,7 @@ package ch.usi.dag.disl;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,7 +92,7 @@ public final class DiSL {
         final ClassResources resources = ClassResources.discover (properties);
         __transformers = Transformers.load (resources.transformers ());
         __excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
-        __dislClasses = DislClasses.load (__codeOptions, resources.dislClasses ());
+        __dislClasses = DislClasses.load (__codeOptions, resources.classUrlPairs ());
     }
 
 
@@ -120,7 +121,21 @@ public final class DiSL {
      *         if the initialization failed.
      */
     public static DiSL init () throws DiSLException {
-        return init (System.getProperties ());
+        return init (System.getProperties (), null);
+    }
+
+    /**
+     * Creates a {@link DiSL} instance. This involves loading and parsing DiSL
+     * classes containing snippets, loading transformer classes, and setting up
+     * exclusion lists. This method uses the system properties to look for
+     * configuration settings, and a list of JAR URLs pointing to the instrumentation JAR files.
+     *
+     * @return A {@link DiSL} instance.
+     * @throws DiSLException
+     *         if the initialization failed.
+     */
+    public static DiSL initWithInstrumentationJars (List<URL> instrumentationJars) throws DiSLException {
+        return init (System.getProperties (), instrumentationJars);
     }
 
 
@@ -131,19 +146,30 @@ public final class DiSL {
      * @param properties
      *        the properties to use in place of system properties, may not be
      *        {@code null}
+     * @param instrumentationJars
+     *        a list of URLs pointing to the instrumentation JARs, may be
+     *        {@code null}
      * @return A {@link DiSL} instance.
      * @throws DiSLException
      *         if the initialization failed.
      */
-    private static DiSL init (final Properties properties) throws DiSLException {
+    private static DiSL init(final Properties properties, final List<URL> instrumentationJars) throws DiSLException{
         final Set <CodeOption> codeOptions = __codeOptionsFrom (
-            Objects.requireNonNull (properties)
+                Objects.requireNonNull (properties)
         );
 
-        final ClassResources resources = ClassResources.discover (properties);
+        final ClassResources resources;
+
+        if (instrumentationJars == null || instrumentationJars.isEmpty()){
+            resources = ClassResources.discover (properties);
+        }else{
+            resources = ClassResources.discoverWithInstrumentJars(properties, instrumentationJars);
+        }
+
         final Transformers transformers = Transformers.load (resources.transformers ());
         final Set <Scope> excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
-        final DislClasses dislClasses = DislClasses.load (codeOptions, resources.dislClasses ());
+        final DislClasses dislClasses = DislClasses.load (codeOptions, resources.classUrlPairs());
+
 
         // TODO put checker here
         // like After should catch normal and abnormal execution
@@ -155,7 +181,6 @@ public final class DiSL {
 
         return new DiSL (codeOptions, transformers, excludedScopes, dislClasses);
     }
-
 
     /**
      * Derives code options from global properties. This is a transitional

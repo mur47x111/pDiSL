@@ -122,9 +122,15 @@ abstract class ExclusionSet {
         //
         // Extract JAR file path from the manifest URL.
         //
+        // It's possible that the manifest URL *is* the JAR URL since
+        // instrumentation JAR URLs not in the classpath are stored as
+        // just the path to the JAR, not the MANIFEST.MF file inside
+        //
         final String manifestPath = manifestUrl.getPath ();
         final int jarPathBegin = manifestPath.indexOf ("/");
         final int jarPathEnd = manifestPath.indexOf ("!");
+        if (jarPathBegin == -1 || jarPathEnd == -1)
+            return manifestPath;
 
         return manifestPath.substring (jarPathBegin, jarPathEnd);
     }

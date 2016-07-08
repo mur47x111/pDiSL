@@ -1065,6 +1065,16 @@
 		</exec>
 	</target>
 
+	<target name="run-remote-debug" depends="build">
+		<exec executable="java">
+			<arg value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000" />
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar" />
+			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
 	<!-- Clean up -->
 
 	<target name="clean-examples">
