@@ -84,9 +84,10 @@ static int i = 0;
 //                TODO: Remove
 //                This is currently simply a test to see if we can use multiple instrument jar files
                 URL jarUrl = new File("example-inst" + ((i == 0) ? "" : "1") + ".jar").toURI().toURL();
+                i++;
 
                 try {
-                    final Message request = mc.recvMessage ();
+//                    final Message request = mc.recvMessage ();
                     __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
                 } catch (final DiSLException de) {
                     //
@@ -190,7 +191,6 @@ static int i = 0;
                 ));
 
 //                TODO: Remove - part of test
-                i++;
             }
 
         } catch (final ClosedByInterruptException cbie) {

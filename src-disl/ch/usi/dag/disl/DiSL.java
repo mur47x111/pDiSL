@@ -601,7 +601,14 @@ public final class DiSL {
          * mainly useful for debugging instrumentation code, because the
          * handlers terminate the program execution.
          */
-        CATCH_EXCEPTIONS (Flag.CATCH_EXCEPTIONS);
+        CATCH_EXCEPTIONS (Flag.CATCH_EXCEPTIONS),
+
+        /**
+         * Flag indicating that this message contains data used to create the
+         * environment for DiSL. This includes:
+         *  - instrumentation JAR path
+         */
+        SETUP_MESSAGE (Flag.SETUP_MESSAGE);
 
 
         /**
@@ -613,6 +620,7 @@ public final class DiSL {
             static final int DYNAMIC_BYPASS = 1 << 1;
             static final int SPLIT_METHODS = 1 << 2;
             static final int CATCH_EXCEPTIONS = 1 << 3;
+            static final int SETUP_MESSAGE = 1 << 4;
         }
 
         //

@@ -42,6 +42,9 @@
 #define DISL_FORCE_INTERFACES "disl.forceinterfaces"
 #define DISL_FORCE_INTERFACES_DEFAULT false
 
+#define DISL_INSTRUMENTATION_JAR_PATH "disl.instrumentationjarpath"
+#define DISL_INSTRUMENTATION_JAR_PATH_DEFAULT "instrumentation.jar"
+
 #define DISL_DEBUG "debug"
 #define DISL_DEBUG_DEFAULT false
 
@@ -82,6 +85,7 @@ enum code_flags {
 	CF_DYNAMIC_BYPASS = ch_usi_dag_disl_DiSL_CodeOption_Flag_DYNAMIC_BYPASS,
 	CF_SPLIT_METHODS = ch_usi_dag_disl_DiSL_CodeOption_Flag_SPLIT_METHODS,
 	CF_CATCH_EXCEPTIONS = ch_usi_dag_disl_DiSL_CodeOption_Flag_CATCH_EXCEPTIONS,
+  CF_SETUP_MESSAGE = ch_usi_dag_disl_DiSL_CodeOption_Flag_SETUP_MESSAGE,
 };
 
 
@@ -94,6 +98,9 @@ struct config {
 	bool catch_exceptions;
 	bool force_superclass;
 	bool force_interfaces;
+
+	char * instrumentation_jar_path;
+  bool will_send_setup_message;
 
 	bool debug;
 };
@@ -262,6 +269,57 @@ __instrument_class (
 	}
 }
 
+/**
+ * Sends the message to initialise the server.
+ */
+static bool
+__setup_message_send (
+	const struct config * config
+) {
+
+	if (!config->will_send_setup_message)
+		return;
+	//
+	// Create a request message, acquire a connection and
+	// send the it to the server. Receive the response and release the
+	// connection again.
+	//
+	struct message request = {
+		.message_flags = CF_SETUP_MESSAGE,
+		.control_size = 0,
+		.classcode_size = strlen(config->instrumentation_jar_path)
+		.control = (unsigned char *) 0,
+		.classcode = (unsigned char *) config->instrumentation_jar_path,
+	};
+
+	//
+
+	struct connection * conn = network_acquire_connection ();
+	message_send (conn, &request);
+
+	struct message response;
+	message_recv (conn, &response);
+	network_release_connection (conn);
+
+	//
+	// Check if error occurred on the server.
+	// The control field of the response contains the error message.
+	//
+	if (response.control_size > 0) {
+		fprintf (
+			stderr, "%sinstrumentation server error:\n%s\n",
+			ERROR_PREFIX, response.control
+		);
+
+		exit (ERROR_SERVER);
+	}
+
+	//
+	// We have setup the server.
+	//
+	config->will_send_setup_message = false;
+}
+
 
 static void
 __handle_exception (JNIEnv * jni, jthrowable ex_obj) {
@@ -367,7 +425,7 @@ __thread_id (JNIEnv * jni) {
 		if (thread_class_local == NULL) {
 			return -1;
 		}
-		
+
 		thread_class = (jclass) (* jni)->NewGlobalRef (jni, thread_class_local);
 		if (thread_class == NULL) {
 			return -1;
@@ -505,7 +563,7 @@ jvmti_callback_class_file_load (
 		*new_class_bytes = jvm_class_bytes;
 
 		rdatiprintf (
-			&info, "redefined %s (%ld bytes)\n", 
+			&info, "redefined %s (%ld bytes)\n",
 			__safe (class_name), (long) class_def.class_byte_count
 		);
 	} else {
@@ -639,6 +697,12 @@ __configure_from_properties (jvmtiEnv * jvmti, struct config * config) {
 		jvmti, DISL_DEBUG, DISL_DEBUG_DEFAULT
 	);
 
+	config->instrumentation_jar_path = jvmti_get_system_property_string (
+		jvmti, DISL_INSTRUMENTATION_JAR_PATH, DISL_INSTRUMENTATION_JAR_PATH_DEFAULT
+	);
+
+	config->will_send_setup_message = true;
+
 	//
 	// Configuration summary. Current thread does not exist yet.
 	//
@@ -648,6 +712,7 @@ __configure_from_properties (jvmtiEnv * jvmti, struct config * config) {
 		rdaprefix ("catch exceptions: %d\n", config->catch_exceptions);
 		rdaprefix ("force superclass: %d\n", config->force_superclass);
 		rdaprefix ("force interfaces: %d\n", config->force_interfaces);
+		rdaprefix ("instrumentation jar path: %s\n", config->instrumentation_jar_path);
 		rdaprefix ("debug: %d\n", config->debug);
 	}
 }
@@ -737,6 +802,9 @@ Agent_OnLoad (JavaVM * jvm, char * options, void * reserved) {
 
 	rdaprintf ("agent loaded, initializing connections\n");
 	network_init (agent_config.server_host, agent_config.server_port);
+
+	// If we need to, send the initialization message
+	__setup_message_send(&agent_config);
 
 
 	// register callbacks
