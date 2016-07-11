@@ -1,6 +1,7 @@
 package ch.usi.dag.dislserver;
 
 
+import ch.usi.dag.disl.DiSL;
 
 final class Message {
 
@@ -40,11 +41,16 @@ final class Message {
         return __payload;
     }
 
+    public String instrumentationJarPath () { return this.isSetupMessage() ? new String(this.payload()) : null; }
+
     //
 
     public boolean isShutdown () {
         return (__control.length == 0) && (__payload.length == 0);
     }
+
+
+    public boolean isSetupMessage () { return (__flags & (DiSL.CodeOption.Flag.SETUP_MESSAGE)) != 0; }
 
     //
 

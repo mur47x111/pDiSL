@@ -87,7 +87,26 @@ static int i = 0;
                 i++;
 
                 try {
-//                    final Message request = mc.recvMessage ();
+                    Message request = mc.recvMessage();
+                    if (!request.isSetupMessage()){
+                        mc.sendMessage (
+                                Message.createErrorResponse ("Setup message not received before first request.")
+                        );
+                        shouldRequestLoop = false;
+                    }
+
+                    File jarFile = new File(request.instrumentationJarPath());
+
+                    if (jarFile.exists() && jarFile.isFile() && jarFile.canRead()){
+                        jarUrl = jarFile.toURI().toURL();
+                    }else{
+                        mc.sendMessage (
+                                Message.createErrorResponse ("Invalid path or file for instrumentation jar.")
+                        );
+                        shouldRequestLoop = false;
+                    }
+
+
                     __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
                 } catch (final DiSLException de) {
                     //

@@ -85,7 +85,7 @@ enum code_flags {
 	CF_DYNAMIC_BYPASS = ch_usi_dag_disl_DiSL_CodeOption_Flag_DYNAMIC_BYPASS,
 	CF_SPLIT_METHODS = ch_usi_dag_disl_DiSL_CodeOption_Flag_SPLIT_METHODS,
 	CF_CATCH_EXCEPTIONS = ch_usi_dag_disl_DiSL_CodeOption_Flag_CATCH_EXCEPTIONS,
-  CF_SETUP_MESSAGE = ch_usi_dag_disl_DiSL_CodeOption_Flag_SETUP_MESSAGE,
+  	CF_SETUP_MESSAGE = ch_usi_dag_disl_DiSL_CodeOption_Flag_SETUP_MESSAGE,
 };
 
 
@@ -272,9 +272,9 @@ __instrument_class (
 /**
  * Sends the message to initialise the server.
  */
-static bool
+static void
 __setup_message_send (
-	const struct config * config
+	struct config * config
 ) {
 
 	if (!config->will_send_setup_message)
@@ -287,8 +287,8 @@ __setup_message_send (
 	struct message request = {
 		.message_flags = CF_SETUP_MESSAGE,
 		.control_size = 0,
-		.classcode_size = strlen(config->instrumentation_jar_path)
-		.control = (unsigned char *) 0,
+		.classcode_size = strlen(config->instrumentation_jar_path),
+		.control = (unsigned char *) NULL,
 		.classcode = (unsigned char *) config->instrumentation_jar_path,
 	};
 
