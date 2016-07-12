@@ -45,10 +45,6 @@ public final class DiSLServer {
     private final AtomicInteger __workerCount = new AtomicInteger ();
     private final CounterSet <ElapsedTime> __globalStats = new CounterSet <ElapsedTime> (ElapsedTime.class);
 
-
-//    TODO: Remove
-static int i = 0;
-
     //
 
     final class ConnectionHandler implements Runnable {
@@ -80,11 +76,10 @@ static int i = 0;
                 //
                 final CounterSet <ElapsedTime> stats = new CounterSet  <ElapsedTime> (ElapsedTime.class);
                 final IntervalTimer <ElapsedTime> timer = new IntervalTimer <ElapsedTime> (ElapsedTime.class);
-                boolean shouldRequestLoop = true;
-//                TODO: Remove
-//                This is currently simply a test to see if we can use multiple instrument jar files
-                URL jarUrl = new File("example-inst" + ((i == 0) ? "" : "1") + ".jar").toURI().toURL();
-                i++;
+
+//                Boolean to determine whether or not to enter the REQUEST_LOOP - if we have encountered errors, don't loop and go to end.
+                boolean shouldEnterRequestLoop = true;
+                URL jarUrl = null;
 
                 try {
                     Message request = mc.recvMessage();
@@ -92,34 +87,51 @@ static int i = 0;
                         mc.sendMessage (
                                 Message.createErrorResponse ("Setup message not received before first request.")
                         );
-                        shouldRequestLoop = false;
+                        shouldEnterRequestLoop = false;
                     }
 
-                    File jarFile = new File(request.instrumentationJarPath());
+//                    Only perform these if we will enter the loop. Otherwise it's wasteful computation
+                    if (shouldEnterRequestLoop){
+                        File jarFile = new File(request.instrumentationJarPath());
 
-                    if (jarFile.exists() && jarFile.isFile() && jarFile.canRead()){
-                        jarUrl = jarFile.toURI().toURL();
-                    }else{
-                        mc.sendMessage (
-                                Message.createErrorResponse ("Invalid path or file for instrumentation jar.")
-                        );
-                        shouldRequestLoop = false;
+//                    Some checks to ensure we have this jar, report different errors back to the client.
+                        if (jarFile.exists() && jarFile.isFile()){
+
+                            if (jarFile.canRead()) {
+
+                                jarUrl = jarFile.toURI().toURL();
+                                __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
+
+                            } else {
+
+                                mc.sendMessage (
+                                        Message.createErrorResponse ("Instrumentation jar cannot be read.")
+                                );
+                                shouldEnterRequestLoop = false;
+
+                            }
+
+                        }else{
+
+                            mc.sendMessage (
+                                    Message.createErrorResponse ("Invalid path or file for instrumentation jar.")
+                            );
+                            shouldEnterRequestLoop = false;
+
+                        }
                     }
-
-
-                    __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
                 } catch (final DiSLException de) {
                     //
                     // Error creating request processor. Report it to the client
-                    // and stop receiving requests from this connection.
+                    // and don't let request loop start.
                     //
                     mc.sendMessage (
                             Message.createErrorResponse (de.getMessage ())
                     );
-                    shouldRequestLoop = false;
+                    shouldEnterRequestLoop = false;
                 }
 
-                REQUEST_LOOP: while (shouldRequestLoop) {
+                REQUEST_LOOP: while (shouldEnterRequestLoop) {
                     timer.reset ();
 
                     final Message request = mc.recvMessage ();
@@ -135,6 +147,7 @@ static int i = 0;
                     // Update the timing stats if everything goes well.
                     //
                     try {
+//                        `__requestprocessor` can never be null at this point - the loop is not entered if it is.
                         final Message response = __requestProcessor.process (request);
                         timer.mark (ElapsedTime.PROCESS);
 
@@ -170,9 +183,11 @@ static int i = 0;
                     "error communicating with client: %s", ioe.getMessage ()
                 );
             } finally {
-//            Terminate the RequestProcessor
+
+//            Terminate the RequestProcessor. It may be null here so check it's not.
                 if (__requestProcessor != null)
                     __requestProcessor.terminate();
+
             }
 
 

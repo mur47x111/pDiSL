@@ -307,7 +307,7 @@ __setup_message_send (
 	//
 	if (response.control_size > 0) {
 		fprintf (
-			stderr, "%sinstrumentation server error:\n%s\n",
+			stderr, "%sError setting up server session:\n%s\n",
 			ERROR_PREFIX, response.control
 		);
 
@@ -315,7 +315,7 @@ __setup_message_send (
 	}
 
 	//
-	// We have setup the server.
+	// We have successfully setup the server.
 	//
 	config->will_send_setup_message = false;
 }

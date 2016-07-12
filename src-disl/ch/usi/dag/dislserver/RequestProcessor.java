@@ -174,7 +174,10 @@ final class RequestProcessor {
     }
 
     public static RequestProcessor newInstanceWithJARUrl(URL url) throws DiSLException {
-        return newInstanceWithJARPaths(Arrays.asList(url));
+        if (url == null)
+            return newInstance();
+        else
+            return newInstanceWithJARPaths(Arrays.asList(url));
     }
 
     public static RequestProcessor newInstanceWithJARPaths(List<URL> urls) throws DiSLException{
