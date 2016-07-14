@@ -314,6 +314,18 @@ __setup_message_send (
 		exit (ERROR_SERVER);
 	}
 
+	if (response.message_flags != CF_SETUP_MESSAGE)
+	{
+		fprintf (
+			stderr, "%sThe server did not respond to the setup message as expected. Perhaps it is an outdated version.\n",
+			ERROR_PREFIX
+		);
+
+		exit (ERROR_SERVER);
+	}
+
+	printf("Server is configured.\n");
+
 	//
 	// We have successfully setup the server.
 	//

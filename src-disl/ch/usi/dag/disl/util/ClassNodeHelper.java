@@ -50,11 +50,11 @@ public enum ClassNodeHelper {
     //
 
     /**
-     * Creates a new {@link ClassNode} instance by parsing class-file bytes
+     * Creates a new {@link ClassNodeExt} instance by parsing class-file bytes
      * from the given array.
      */
-    public ClassNode unmarshal (final byte [] bytes) {
-        final ClassNode result = new ClassNode (Opcodes.ASM5);
+    public ClassNodeExt unmarshal (final byte [] bytes) {
+        final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
         new ClassReader (bytes).accept (result, __flags);
         return result;
     }
@@ -64,8 +64,8 @@ public enum ClassNodeHelper {
      * Creates a new {@link ClassNode} instance by parsing class-file bytes
      * from the given input stream.
      */
-    public ClassNode unmarshal (final InputStream is) throws IOException {
-        final ClassNode result = new ClassNode (Opcodes.ASM5);
+    public ClassNodeExt unmarshal (final InputStream is) throws IOException {
+        final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
         new ClassReader (is).accept (result, __flags);
         return result;
     }
@@ -75,14 +75,14 @@ public enum ClassNodeHelper {
      * Creates a new {@link ClassNode} instance by loading class-file bytes
      * as a resource using the system class loader.
      */
-    public ClassNode load (final String className) throws IOException {
-        final ClassNode result = new ClassNode (Opcodes.ASM5);
+    public ClassNodeExt load (final String className) throws IOException {
+        final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
         new ClassReader (className).accept (result, __flags);
         return result;
     }
 
-    public ClassNode loadFromURL(final String className, URL jarBaseUrl) throws IOException, URISyntaxException{
-        final ClassNode result = new ClassNode(Opcodes.ASM5);
+    public ClassNodeExt loadFromURL(final String className, URL jarBaseUrl) throws IOException, URISyntaxException{
+        final ClassNodeExt result = new ClassNodeExt(Opcodes.ASM5);
         ClassReaderOTF.getClassReader(className, jarBaseUrl).accept(result, __flags);
         return result;
     }
@@ -96,9 +96,24 @@ public enum ClassNodeHelper {
      *        the {@link ClassNode} instance to duplicate
      * @return a new {@link ClassNode} instance
      */
-    public static ClassNode duplicate (final ClassNode source) {
-        final ClassNode result = new ClassNode (Opcodes.ASM5);
+    public static ClassNodeExt duplicate (final ClassNode source) {
+        final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
         source.accept (result);
+        return result;
+    }
+
+    /**
+     * Creates a new {@link ClassNodeExt} instance as a duplicate of the
+     * given instance.
+     *
+     * @param source
+     *        the {@link ClassNodeExt} instance to duplicate
+     * @return a new {@link ClassNodeExt} instance
+     */
+    public static ClassNodeExt duplicate (final ClassNodeExt source) {
+        final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
+        source.accept (result);
+        result.setUrlClassLoader(source.urlClassLoader);
         return result;
     }
 

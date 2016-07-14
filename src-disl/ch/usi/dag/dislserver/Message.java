@@ -81,6 +81,17 @@ final class Message {
     }
 
     /**
+     * Creates a message indicating that a class was not modified.
+     */
+    public static Message createSetupSucceededResponse () {
+        //
+        // The flag is set to SETUP_MESSAGE, and both the control part and the
+        // payload parts of the network message are empty.
+        //
+        return new Message (DiSL.CodeOption.Flag.SETUP_MESSAGE, __EMPTY_ARRAY__, __EMPTY_ARRAY__);
+    }
+
+    /**
      * Creates a message indicating a server-side error.
      */
     public static Message createErrorResponse (final String error) {

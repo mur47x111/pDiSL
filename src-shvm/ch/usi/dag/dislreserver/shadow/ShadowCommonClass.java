@@ -14,6 +14,9 @@ import org.objectweb.asm.tree.MethodNode;
 
 import ch.usi.dag.dislreserver.DiSLREServerFatalException;
 
+
+//TODO: Do we need to swap all ClassNode with ClassNodeExt?
+
 class ShadowCommonClass extends ShadowClass {
 
     // TODO ! is this implementation of methods really working ??

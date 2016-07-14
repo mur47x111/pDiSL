@@ -1,11 +1,13 @@
 package ch.usi.dag.disl.classparser;
 
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import ch.usi.dag.disl.util.ClassNodeExt;
 import ch.usi.dag.disl.util.Pair;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -50,7 +52,7 @@ public final class DislClasses {
         // parse them as snippets or argument processors depending on the
         // annotations associated with each class.
         //
-        final List <ClassNode> classNodes = classNamesAndUrls
+        final List <ClassNodeExt> classNodes = classNamesAndUrls
             .map (classNameAndUrl -> __createClassNode (classNameAndUrl.getFirst(), classNameAndUrl.getSecond()))
             .collect (Collectors.toList ());
 
@@ -67,7 +69,7 @@ public final class DislClasses {
         final SnippetParser sp = new SnippetParser ();
         final ArgProcessorParser app = new ArgProcessorParser ();
 
-        for (final ClassNode classNode : classNodes) {
+        for (final ClassNodeExt classNode : classNodes) {
             if (__isArgumentProcessor (classNode)) {
                 app.parse (classNode);
             } else {
@@ -101,7 +103,7 @@ public final class DislClasses {
     }
 
 
-    private static ClassNode __createClassNode (final String className, final URL loadUrl) {
+    private static ClassNodeExt __createClassNode (final String className, final URL loadUrl) {
         //
         // Parse input stream into a class node. Include debug information so
         // that we can report line numbers in case of problems in DiSL classes.
@@ -109,7 +111,10 @@ public final class DislClasses {
         //
         try {
             if (loadUrl != null){
-                return ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
+                ClassNodeExt classNode = ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
+                URLClassLoader cl = URLClassLoader.newInstance(new URL[]{loadUrl}, DislClasses.class.getClassLoader());
+                classNode.setUrlClassLoader(cl);
+                return classNode;
             }else{
                 return ClassNodeHelper.SNIPPET.load (className);
             }

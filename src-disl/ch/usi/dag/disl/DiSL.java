@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ch.usi.dag.disl.util.ClassNodeExt;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -501,7 +502,7 @@ public final class DiSL {
         }
 
         final byte [] transformedBytes = __transformers.apply (originalBytes);
-        final ClassNode inputCN = ClassNodeHelper.FULL.unmarshal (transformedBytes);
+        final ClassNodeExt inputCN = ClassNodeHelper.FULL.unmarshal (transformedBytes);
         Reflection.systemClassLoader ().notifyClassLoaded (inputCN);
 
         //

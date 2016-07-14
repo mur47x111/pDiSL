@@ -88,10 +88,8 @@ public final class DiSLServer {
                                 Message.createErrorResponse ("Setup message not received before first request.")
                         );
                         shouldEnterRequestLoop = false;
-                    }
-
-//                    Only perform these if we will enter the loop. Otherwise it's wasteful computation
-                    if (shouldEnterRequestLoop){
+                    } else {
+//                        Received setup message. Try to locate and load appropriate JAR
                         File jarFile = new File(request.instrumentationJarPath());
 
 //                    Some checks to ensure we have this jar, report different errors back to the client.
@@ -101,6 +99,7 @@ public final class DiSLServer {
 
                                 jarUrl = jarFile.toURI().toURL();
                                 __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
+                                mc.sendMessage(Message.createSetupSucceededResponse());
 
                             } else {
 

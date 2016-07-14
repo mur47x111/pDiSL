@@ -1056,11 +1056,30 @@
 
 
 	<!-- Run target -->
+	<target name="run-continuous" depends="build">
+		<exec executable="java">
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar" />
+			<arg value="-Ddislserver.continuous=true" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
 	<target name="run-debug" depends="build">
 		<exec executable="java">
 			<arg value="-cp" />
 			<arg value="${out.lib}/disl-server.jar:./example-inst.jar" />
 			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
+	<target name="run-debug-continuous" depends="build">
+		<exec executable="java">
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar:./example-inst.jar" />
+			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="-Ddislserver.continuous=true" />
 			<arg value="ch.usi.dag.dislserver.DiSLServer" />
 		</exec>
 	</target>
@@ -1071,6 +1090,17 @@
 			<arg value="-cp" />
 			<arg value="${out.lib}/disl-server.jar" />
 			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
+	<target name="run-remote-debug-continuous" depends="build">
+		<exec executable="java">
+			<arg value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000" />
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar" />
+			<arg value="-Ddisl.logging.level=debug" />
+			<arg value="-Ddislserver.continuous=true" />
 			<arg value="ch.usi.dag.dislserver.DiSLServer" />
 		</exec>
 	</target>
