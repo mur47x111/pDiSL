@@ -1,5 +1,6 @@
 package ch.usi.dag.disl.classparser;
 
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public enum ContextKind {
         private final Map <Type, Boolean> __cache = new HashMap <Type, Boolean> ();
 
         @Override
-        public boolean matches (final Type type) {
+        public boolean matches (final Type type, final URLClassLoader urlClassLoader) {
             //
             // Static context has to implement the StaticContext interface.
             //
@@ -26,14 +27,14 @@ public enum ContextKind {
             if (cachedResult != null) {
                 return cachedResult;
             } else {
-                final boolean result = __implementsStaticContext (type);
+                final boolean result = __implementsStaticContext (type, urlClassLoader);
                 __cache.put (type,  result);
                 return result;
             }
         }
 
-        private boolean __implementsStaticContext (final Type type) {
-            final Class <?> typeClass = ReflectionHelper.tryResolveClass (type);
+        private boolean __implementsStaticContext (final Type type, final URLClassLoader urlClassLoader) {
+            final Class <?> typeClass = ReflectionHelper.tryResolveClass (type, urlClassLoader);
             if (typeClass != null) {
                 return ReflectionHelper.implementsInterface (typeClass, _itfClass);
             } else {
@@ -64,16 +65,16 @@ public enum ContextKind {
     }
 
 
-    public boolean matches (final Type type) {
+    public boolean matches (final Type type, final URLClassLoader urlClassLoader) {
         return _itfType.equals (type);
     }
 
-    public static ContextKind forType (final Type type) {
+    public static ContextKind forType (final Type type, final URLClassLoader urlClassLoader) {
         //
         // Find the context that matches the type
         //
         for (final ContextKind context : ContextKind.values ()) {
-            if (context.matches (type)) {
+            if (context.matches (type, urlClassLoader)) {
                 return context;
             }
         }

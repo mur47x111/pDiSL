@@ -414,8 +414,8 @@ def run(cmd, out, err):
 # RUN_SERVER
 ######################################################################
 def run_server(args, parser):
-	if args.instrumentation is None:
-		parser.error("argument instr (-i) is required to run the client")
+	# if args.instrumentation is None:
+	# 	parser.error("argument instr (-i) is required to run the client")
 
 	try_kill(".server.pid")
 
@@ -424,7 +424,8 @@ def run_server(args, parser):
 
 	s_cmd = ["java"]
 	s_cmd+= args.s_opts
-	s_cmd+= ["-cp", args.instrumentation + ":" + s_jar]
+	# s_cmd+= ["-cp", args.instrumentation + ":" + s_jar]
+	s_cmd+= ["-cp", s_jar]
 	s_cmd+= [s_class]
 	s_cmd+= args.s_args
 
@@ -442,8 +443,8 @@ def run_server(args, parser):
 # RUN_EVALUATION
 ######################################################################
 def run_evaluation(args, parser):
-	if args.instrumentation is None:
-		parser.error("argument instr (-i) is required to run the client")
+	# if args.instrumentation is None:
+	# 	parser.error("argument instr (-i) is required to run the client")
 
 	try_kill(".evaluation.pid")
 
@@ -453,7 +454,8 @@ def run_evaluation(args, parser):
 	e_cmd = ["java"]
 	e_cmd+= args.s_opts
 	e_cmd+= ["-Xms1G", "-Xmx2G"]
-	e_cmd+= ["-cp", args.instrumentation + ":" + e_jar]
+	# e_cmd+= ["-cp", args.instrumentation + ":" + e_jar]
+	e_cmd+= ["-cp", e_jar]
 	e_cmd+= [e_class]
 	e_cmd+= args.e_args
 
@@ -490,9 +492,13 @@ def run_client(args, parser):
 		c_cmd+= ["-agentpath:"+eagent]
 
 	if args.cse == True:
-		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation+":"+dispatch]
+		# c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation+":"+dispatch]
+		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+dispatch]
 	else:
-		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation]
+		# c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation]
+		c_cmd+= ["-Xbootclasspath/a:"+bypass]
+
+	c_cmd+= ["-Ddisl.instrumentationjarpath="+args.instrumentation]
 
 	c_cmd+= args.c_app
 

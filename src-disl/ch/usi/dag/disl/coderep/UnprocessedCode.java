@@ -1,6 +1,7 @@
 package ch.usi.dag.disl.coderep;
 
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -48,13 +49,16 @@ public class UnprocessedCode {
     /** Method node containing the snippet code. */
     private final MethodNode __method;
 
+    private final URLClassLoader __urlClassLoader;
+
     //
 
     public UnprocessedCode (
-        final String className, final MethodNode method
+        final String className, final MethodNode method, final URLClassLoader urlClassLoader
     ) {
         __className = className;
         __method = method;
+        __urlClassLoader = urlClassLoader;
     }
 
     //
@@ -93,7 +97,7 @@ public class UnprocessedCode {
         // variables, and finally determine if there is any exception handler in
         // the code that handles the exception and does not propagate it.
         //
-        final ContextUsage ctxs = ContextUsage.forMethod (__method);
+        final ContextUsage ctxs = ContextUsage.forMethod (__method, __urlClassLoader);
         final Set <StaticContextMethod> scms = __collectStaticContextMethods (
             __method.instructions, ctxs.staticContextTypes ()
         );
@@ -242,7 +246,7 @@ public class UnprocessedCode {
 
     private Class <?> __resolveClass (final MethodInsnNode insn) {
         try {
-            return ReflectionHelper.resolveClass (Type.getObjectType (insn.owner));
+            return ReflectionHelper.resolveClass (Type.getObjectType (insn.owner), __urlClassLoader);
 
         } catch (final ReflectionException e) {
             throw new InvalidStaticContextInvocationException (e.getMessage (), insn);

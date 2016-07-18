@@ -113,7 +113,7 @@ public enum ClassNodeHelper {
     public static ClassNodeExt duplicate (final ClassNodeExt source) {
         final ClassNodeExt result = new ClassNodeExt (Opcodes.ASM5);
         source.accept (result);
-        result.setUrlClassLoader(source.urlClassLoader);
+        result.loadUrl = source.loadUrl;
         return result;
     }
 

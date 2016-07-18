@@ -50,6 +50,10 @@ class SnippetParser extends AbstractParser {
         return snippets;
     }
 
+    public SnippetParser(URLClassLoader urlClassLoader){
+        super(urlClassLoader);
+    }
+
     //
 
     // NOTE: this method can be called many times
@@ -64,7 +68,7 @@ class SnippetParser extends AbstractParser {
             snippets.addAll (dislClass.methods.parallelStream ().unordered ()
                 .filter (m -> !JavaNames.isConstructorName (m.name))
                 .filter (m -> !JavaNames.isInitializerName (m.name))
-                .map (m -> __parseSnippetWrapper (className, m, dislClass.urlClassLoader))
+                .map (m -> __parseSnippetWrapper (className, m))
                 .collect (Collectors.toList ())
             );
 
@@ -75,14 +79,14 @@ class SnippetParser extends AbstractParser {
 
 
     private Snippet __parseSnippetWrapper (
-            final String className, final MethodNode method, final URLClassLoader urlClassLoader
+            final String className, final MethodNode method
             ) {
         //
         // Wrap all parser exceptions into ParserRuntimeException so that
         // __parseSnippet() can be called from a stream pipeline.
         //
         try {
-            return __parseSnippet (className, method, urlClassLoader);
+            return __parseSnippet (className, method);
 
         } catch (final Exception e) {
             throw new ParserRuntimeException (
@@ -94,7 +98,7 @@ class SnippetParser extends AbstractParser {
 
 
     private Snippet __parseSnippet (
-        final String className, final MethodNode method, URLClassLoader urlClassLoader
+        final String className, final MethodNode method
     ) throws ParserException, ReflectionException, MarkerException, GuardException  {
         __ensureSnippetIsWellDefined (method);
 
@@ -106,14 +110,14 @@ class SnippetParser extends AbstractParser {
 
         //
 
-        final Marker marker = getMarker (data.marker, data.args, urlClassLoader);
+        final Marker marker = getMarker (data.marker, data.args);
         final Scope scope = ScopeMatcher.forPattern (data.scope);
         final Method guard = GuardHelper.findAndValidateGuardMethod (
-            AbstractParser.getGuard (data.guard), GuardHelper.snippetContextSet ()
+            AbstractParser.getGuard (data.guard, urlClassLoader), GuardHelper.snippetContextSet ()
         );
 
         final SnippetUnprocessedCode template = new SnippetUnprocessedCode (
-            className, method, data.dynamicBypass
+            className, method, data.dynamicBypass, urlClassLoader
         );
 
         //
@@ -138,7 +142,7 @@ class SnippetParser extends AbstractParser {
 
         ensureMethodIsStatic (method);
         ensureMethodReturnsVoid (method);
-        ensureMethodHasOnlyContextArguments (method);
+        ensureMethodHasOnlyContextArguments (method, urlClassLoader);
         ensureMethodThrowsNoExceptions (method);
 
         ensureMethodIsNotEmpty (method);
@@ -255,7 +259,7 @@ class SnippetParser extends AbstractParser {
     //
 
     private Marker getMarker (
-        final Type markerType, final String markerParam, URLClassLoader urlClassLoader
+        final Type markerType, final String markerParam
     ) throws ReflectionException, MarkerException {
         final Class <?> rawMarkerClass = ReflectionHelper.resolveClass (markerType, urlClassLoader);
         final Class <? extends Marker> markerClass = rawMarkerClass.asSubclass (Marker.class);

@@ -1,5 +1,6 @@
 package ch.usi.dag.disl.snippet;
 
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +48,8 @@ public class SnippetUnprocessedCode {
      */
     private final UnprocessedCode __template;
 
+    private final URLClassLoader __urlClassLoader;
+
     //
 
     /**
@@ -55,10 +58,11 @@ public class SnippetUnprocessedCode {
      * the snippet requires automatic control of dynamic bypass.
      */
     public SnippetUnprocessedCode (
-        final String className, final MethodNode method,
-        final boolean snippetDynamicBypass
-    ) {
-        __template = new UnprocessedCode (className, method);
+            final String className, final MethodNode method,
+            final boolean snippetDynamicBypass, final URLClassLoader urlClassLoader
+            ) {
+        __urlClassLoader = urlClassLoader;
+        __template = new UnprocessedCode (className, method, __urlClassLoader);
         __snippetDynamicBypass = snippetDynamicBypass;
     }
 

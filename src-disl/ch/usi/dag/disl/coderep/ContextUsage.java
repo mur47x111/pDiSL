@@ -1,5 +1,6 @@
 package ch.usi.dag.disl.coderep;
 
+import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ final class ContextUsage {
 
     //
 
-    public static ContextUsage forMethod (final MethodNode method) {
+    public static ContextUsage forMethod (final MethodNode method, final URLClassLoader urlClassLoader) {
         //
         // Collect the kinds of contexts appearing in the arguments as well as
         // the types of static contexts.
@@ -59,7 +60,7 @@ final class ContextUsage {
         final Set <Type> staticContextTypes = new HashSet <Type> ();
 
         for (final Type argType : Type.getArgumentTypes (method.desc)) {
-            final ContextKind contextKind = ContextKind.forType (argType);
+            final ContextKind contextKind = ContextKind.forType (argType, urlClassLoader);
             if (contextKind != null) {
                 usedContexts.add (contextKind);
                 if (contextKind == ContextKind.STATIC) {

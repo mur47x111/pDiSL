@@ -44,7 +44,7 @@ public final class DislClasses {
     //
 
     public static DislClasses load (
-        final Set <CodeOption> options, final Stream <Pair<String, URL>> classNamesAndUrls
+        final Set <CodeOption> options, final Stream <Pair<String, URL>> classNamesAndUrls, URLClassLoader urlClassLoader
     ) throws ParserException, StaticContextGenException, ReflectionException,
     ProcessorException {
         //
@@ -66,8 +66,8 @@ public final class DislClasses {
 
         //
 
-        final SnippetParser sp = new SnippetParser ();
-        final ArgProcessorParser app = new ArgProcessorParser ();
+        final SnippetParser sp = new SnippetParser (urlClassLoader);
+        final ArgProcessorParser app = new ArgProcessorParser (urlClassLoader);
 
         for (final ClassNodeExt classNode : classNodes) {
             if (__isArgumentProcessor (classNode)) {
@@ -110,14 +110,16 @@ public final class DislClasses {
         // Re-throw any exceptions as DiSL initialization exceptions.
         //
         try {
-            if (loadUrl != null){
-                ClassNodeExt classNode = ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
-                URLClassLoader cl = URLClassLoader.newInstance(new URL[]{loadUrl}, DislClasses.class.getClassLoader());
-                classNode.setUrlClassLoader(cl);
-                return classNode;
-            }else{
-                return ClassNodeHelper.SNIPPET.load (className);
-            }
+//            if (loadUrl != null){
+//                ClassNodeExt classNode = ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
+//                classNode.loadUrl = loadUrl;
+//                return classNode;
+//            }else{
+//                return ClassNodeHelper.SNIPPET.load (className);
+//            }
+            ClassNodeExt classNode = ClassNodeHelper.SNIPPET.loadFromURL(className, loadUrl);
+            classNode.loadUrl = loadUrl;
+            return classNode;
 
         } catch (final Exception e) {
             throw new InitializationException (

@@ -1,6 +1,7 @@
 package ch.usi.dag.disl.classparser;
 
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,10 @@ class ArgProcessorParser extends AbstractParser {
 
     public Map <Type, ArgProcessor> getProcessors () {
         return __processors;
+    }
+
+    public ArgProcessorParser(URLClassLoader urlClassLoader){
+        super(urlClassLoader);
     }
 
     //
@@ -134,7 +139,7 @@ class ArgProcessorParser extends AbstractParser {
         // and create a code template for the argument processor method.
         //
         final UnprocessedCode codeTemplate = new UnprocessedCode (
-            className, method
+            className, method, urlClassLoader
         );
 
         return new ArgProcessorMethod (

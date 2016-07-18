@@ -6,3 +6,4 @@ libdislreagent.jnilib
 *.iml
 examples/*/build
 out
+testAll-output

@@ -2,6 +2,7 @@ package ch.usi.dag.disl.util;
 
 import org.objectweb.asm.tree.ClassNode;
 
+import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
@@ -9,13 +10,9 @@ import java.net.URLClassLoader;
  */
 public class ClassNodeExt extends ClassNode {
 
-    public URLClassLoader urlClassLoader;
+    public URL loadUrl;
 
     public ClassNodeExt(int api){
         super(api);
-    }
-
-    public void setUrlClassLoader(URLClassLoader urlClassLoader){
-        this.urlClassLoader = urlClassLoader;
     }
 }

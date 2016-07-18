@@ -5,13 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
+import java.net.URLClassLoader;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -57,11 +52,11 @@ final class ClassResources {
      */
     public Stream <URL> instrumentationResources () {
         return __manifests.stream ()
-            .filter (DislManifest::isInstrumentation)
-            .map (DislManifest::resource)
-            .filter (Optional::isPresent) // excludes properties
-            .map (Optional::get)
-            .distinct ();
+                .filter (DislManifest::isInstrumentation)
+                .map (DislManifest::resource)
+                .filter (Optional::isPresent) // excludes properties
+                .map (Optional::get)
+                .distinct ();
     }
 
 
@@ -80,8 +75,17 @@ final class ClassResources {
      */
     public Stream <String> dislClasses () {
         return __manifests.stream ()
-            .flatMap (DislManifest::classes)
-            .distinct ();
+                .flatMap (DislManifest::classes)
+                .distinct ();
+    }
+
+    public List <URL> classloaderUrls() {
+        return __manifests.stream()
+                .flatMap (DislManifest::classPathUrl)
+                .filter (Optional::isPresent)
+                .map (Optional::get)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public Stream <Pair<String, URL>> classUrlPairs() {
@@ -132,9 +136,9 @@ final class ClassResources {
 
     private static List <String> __getClassNames (final Optional <String> value) {
         return value.map (v -> __splitter__.splitAsStream (v)
-            .map (String::trim)
-            .filter (s -> !s.isEmpty ())
-            .collect (Collectors.toList ())
+                .map (String::trim)
+                .filter (s -> !s.isEmpty ())
+                .collect (Collectors.toList ())
         ).orElse (Collections.emptyList ());
     }
 
@@ -156,7 +160,7 @@ final class ClassResources {
 
         //
 
-//        For backwards compatability
+        //        For backwards compatability
         List <DislManifest> loadAll (){
             return loadAllClasspath();
         }
@@ -165,8 +169,8 @@ final class ClassResources {
             // Avoid parallel streams to keep order of transformers consistent.
             return __loadFromStream(
                     __manifestUrlStream ()
-                    .map (url -> __loadManifestFileUrl (url))
-                    );
+                            .map (url -> __loadManifestFileUrl (url))
+            );
         }
 
         private List <DislManifest> __loadFromStream (Stream <Optional <DislManifest>> manifestStream) {
@@ -277,6 +281,16 @@ final class ClassResources {
             return __classes.stream ();
         }
 
+        Stream<Optional<URL>> classPathUrl (){
+            Optional<URL> opt;
+            if (isDynamicallyLoaded()) {
+                opt = __url ;
+            }else{
+                opt = Optional.empty();
+            }
+            return Arrays.asList(opt).stream();
+        }
+
         Stream <Pair <String, URL>> classAndLoadUrl (){
             List<Pair<String, URL>> list = new ArrayList<>();
             if (isDynamicallyLoaded()) {
@@ -290,6 +304,8 @@ final class ClassResources {
             }
             return list.stream();
         }
+
+
 
         Stream <String> transformers () {
             return __transformers.stream ();

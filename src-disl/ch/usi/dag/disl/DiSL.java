@@ -4,6 +4,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,6 +65,8 @@ public final class DiSL {
 
     private final DislClasses __dislClasses;
 
+    private final URLClassLoader __urlClassLoader;
+
 
     /**
      * Initializes a DiSL instance by loading transformers, exclusion lists, and
@@ -93,7 +96,8 @@ public final class DiSL {
         final ClassResources resources = ClassResources.discover (properties);
         __transformers = Transformers.load (resources.transformers ());
         __excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
-        __dislClasses = DislClasses.load (__codeOptions, resources.classUrlPairs ());
+        __dislClasses = DislClasses.load (__codeOptions, resources.classUrlPairs (), null);
+        __urlClassLoader = null;
     }
 
 
@@ -102,12 +106,14 @@ public final class DiSL {
      */
     private DiSL (
         final Set <CodeOption> codeOptions, final Transformers transformers,
-        final Set <Scope> excludedScopes, final DislClasses dislClasses
+        final Set <Scope> excludedScopes, final DislClasses dislClasses,
+        final URLClassLoader urlClassLoader
     ) {
         __codeOptions = codeOptions;
         __transformers = transformers;
         __excludedScopes = excludedScopes;
         __dislClasses = dislClasses;
+        __urlClassLoader = urlClassLoader;
     }
 
 
@@ -167,9 +173,12 @@ public final class DiSL {
             resources = ClassResources.discoverWithInstrumentJars(properties, instrumentationJars);
         }
 
+        List<URL> classPathUrls = resources.classloaderUrls();
+        final URLClassLoader theClassLoader = URLClassLoader.newInstance(classPathUrls.toArray(new URL[classPathUrls.size()]), DiSL.class.getClassLoader());
+
         final Transformers transformers = Transformers.load (resources.transformers ());
         final Set <Scope> excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
-        final DislClasses dislClasses = DislClasses.load (codeOptions, resources.classUrlPairs());
+        final DislClasses dislClasses = DislClasses.load (codeOptions, resources.classUrlPairs(), theClassLoader);
 
 
         // TODO put checker here
@@ -180,7 +189,7 @@ public final class DiSL {
         // also it can warn about unknown opcodes if you let user to
         // specify this for InstructionMarker
 
-        return new DiSL (codeOptions, transformers, excludedScopes, dislClasses);
+        return new DiSL (codeOptions, transformers, excludedScopes, dislClasses, theClassLoader);
     }
 
     /**

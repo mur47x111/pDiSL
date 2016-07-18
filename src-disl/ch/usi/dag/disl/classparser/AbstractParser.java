@@ -1,6 +1,7 @@
 package ch.usi.dag.disl.classparser;
 
 import java.lang.reflect.Field;
+import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -45,6 +46,11 @@ import ch.usi.dag.util.logging.Logger;
 abstract class AbstractParser {
 
     private final Logger __log = Logging.getPackageInstance ();
+    protected final URLClassLoader urlClassLoader;
+
+    public AbstractParser(URLClassLoader urlClassLoader){
+        this.urlClassLoader = urlClassLoader;
+    }
 
     //
 
@@ -499,7 +505,7 @@ abstract class AbstractParser {
 
 
     public static void ensureMethodHasOnlyContextArguments (
-        final MethodNode method
+        final MethodNode method, final URLClassLoader urlClassLoader
     ) throws ParserException {
         //
         // The type of each method argument must be a context of some kind.
@@ -508,7 +514,7 @@ abstract class AbstractParser {
         for (int argIndex = 0; argIndex < argTypes.length; argIndex++) {
             final Type argType = argTypes [argIndex];
 
-            final ContextKind contextType = ContextKind.forType (argType);
+            final ContextKind contextType = ContextKind.forType (argType, urlClassLoader);
             if (contextType == null) {
                 throw new ParserException (
                     "argument #%d has invalid type, %s does not "+
@@ -587,13 +593,13 @@ abstract class AbstractParser {
     }
 
 
-    public static Class <?> getGuard (final Type guardType)
+    public static Class <?> getGuard (final Type guardType, URLClassLoader urlClassLoader)
     throws ReflectionException {
         if (guardType == null) {
             return null;
         }
 
-        return ReflectionHelper.resolveClass (guardType);
+        return ReflectionHelper.resolveClass (guardType, urlClassLoader);
     }
 
 }
