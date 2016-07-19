@@ -1,10 +1,12 @@
 package ch.usi.dag.disl.marker;
 
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import ch.usi.dag.disl.util.ClassLoaderHelper;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -20,7 +22,7 @@ public class InsnNodeMarker extends AbstractInsnMarker {
 
     protected Set<Class<? extends AbstractInsnNode>> classes;
 
-    public InsnNodeMarker(Parameter param)
+    public InsnNodeMarker(Parameter param, final URLClassLoader urlClassLoader)
             throws MarkerException {
 
         classes = new HashSet<Class<? extends AbstractInsnNode>>();
@@ -30,7 +32,7 @@ public class InsnNodeMarker extends AbstractInsnMarker {
 
             try {
 
-                Class<?> clazz = Class.forName(className);
+                Class<?> clazz = ClassLoaderHelper.forName(className, urlClassLoader);
                 classes.add(clazz.asSubclass(AbstractInsnNode.class));
             } catch (ClassNotFoundException e) {
 

@@ -16,8 +16,15 @@ import org.objectweb.asm.tree.analysis.Interpreter;
 
 public class ConstInterpreter extends Interpreter<ConstValue> {
 
-    protected ConstInterpreter() {
+    protected ClassLoader __classloader;
+
+    protected ConstInterpreter(ClassLoader classLoader) {
         super(Opcodes.ASM5);
+        __classloader = classLoader;
+    }
+
+    private void setClassloader(ClassLoader classloader){
+        __classloader = classloader;
     }
 
     @Override
@@ -559,7 +566,7 @@ public class ConstInterpreter extends Interpreter<ConstValue> {
 
             int size = Type.getReturnType(((MethodInsnNode) insn).desc)
                     .getSize();
-            Object cst = InvocationInterpreter.getInstance().execute(
+            Object cst = InvocationInterpreter.getInstance(__classloader).execute(
                     (MethodInsnNode) insn, values);
             return new ConstValue(size, cst);
         }
@@ -583,10 +590,12 @@ public class ConstInterpreter extends Interpreter<ConstValue> {
 
     private static ConstInterpreter instance;
 
-    public static ConstInterpreter getInstance() {
+    public static ConstInterpreter getInstance(ClassLoader classLoader) {
         if (instance == null) {
-            instance = new ConstInterpreter();
+            instance = new ConstInterpreter(classLoader);
         }
+
+        instance.setClassloader(classLoader);
 
         return instance;
     }

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ch.usi.dag.disl.util.ClassLoaderHelper;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -116,7 +117,7 @@ class ArgProcessorParser extends AbstractParser {
         // Parse method annotation and ensure that additional parameter types
         // specified in the @ProcessAlso annotation are valid.
         //
-        final AnnotationData data = AnnotationData.parse (method);
+        final AnnotationData data = AnnotationData.parse (method, __classLoader);
         final ArgProcessorKind defaultType = ArgProcessorKind.forMethod (method);
         __ensureValidProcessAlsoTypes (defaultType, data.processAlsoType);
 
@@ -139,7 +140,7 @@ class ArgProcessorParser extends AbstractParser {
         // and create a code template for the argument processor method.
         //
         final UnprocessedCode codeTemplate = new UnprocessedCode (
-            className, method, urlClassLoader
+            className, method, __classLoader
         );
 
         return new ArgProcessorMethod (
@@ -214,13 +215,13 @@ class ArgProcessorParser extends AbstractParser {
 
         //
 
-        public static AnnotationData parse (final MethodNode method) {
+        public static AnnotationData parse (final MethodNode method, final ClassLoader classLoader) {
             final AnnotationData result = new AnnotationData ();
 
-            new AnnotationMapper ()
+            new AnnotationMapper (classLoader)
                 .register (Guarded.class, "guard", (n, v) -> {
                     if (v instanceof Type) {
-                        result.guardClass = Optional.of (__resolveClass ((Type) v));
+                        result.guardClass = Optional.of (__resolveClass ((Type) v, classLoader));
                     }
                 })
                 .register (ProcessAlso.class, "types", (n, v) -> {
@@ -237,9 +238,9 @@ class ArgProcessorParser extends AbstractParser {
         }
 
 
-        private static Class <?> __resolveClass (final Type type) {
+        private static Class <?> __resolveClass (final Type type, final ClassLoader classLoader) {
             try {
-                return Class.forName (type.getClassName ());
+                return ClassLoaderHelper.forName (type.getClassName (), classLoader);
 
             } catch (final ClassNotFoundException e) {
                 throw new ParserRuntimeException (e);

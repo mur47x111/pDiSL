@@ -1,6 +1,7 @@
 package ch.usi.dag.disl.classparser;
 
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import ch.usi.dag.disl.util.ClassLoaderHelper;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -19,6 +21,12 @@ import org.objectweb.asm.tree.MethodNode;
 
 
 final class AnnotationMapper {
+
+    protected ClassLoader __classLoader;
+
+    public AnnotationMapper(final ClassLoader classLoader){
+        this.__classLoader = classLoader;
+    }
 
     private final Map <
         Class <?>, Map <Predicate <String>, BiConsumer <String, Object>>
@@ -104,7 +112,7 @@ final class AnnotationMapper {
 
 
     public AnnotationMapper accept (final AnnotationNode an) {
-        final Class <?> ac = __resolveClass (Type.getType (an.desc));
+        final Class <?> ac = __resolveClass (Type.getType (an.desc), __classLoader);
 
         final Map <
             Predicate <String>, BiConsumer <String, Object>
@@ -120,14 +128,14 @@ final class AnnotationMapper {
             public void visitEnum (
                 final String name, final String desc, final String value
             ) {
-                final Object enumValue = __instantiateEnum (desc, value);
+                final Object enumValue = __instantiateEnum (desc, value, __classLoader);
                 __getConsumer (consumers, name).accept (name, enumValue);
             }
 
             @Override
             public AnnotationVisitor visitArray (final String name) {
                 final BiConsumer <String, Object> consumer = __getConsumer (consumers, name);
-                return new ListCollector (name, consumer);
+                return new ListCollector (name, consumer, __classLoader);
             }
         });
 
@@ -147,12 +155,14 @@ final class AnnotationMapper {
 
         final String __name;
         final BiConsumer <String, Object> __consumer;
+        final ClassLoader __classLoader;
 
-        ListCollector (final String name, final BiConsumer <String, Object> consumer) {
+        ListCollector (final String name, final BiConsumer <String, Object> consumer, final ClassLoader classLoader) {
             super (Opcodes.ASM5);
 
             __name = name;
             __consumer = consumer;
+            __classLoader = classLoader;
         }
 
         @Override
@@ -162,7 +172,7 @@ final class AnnotationMapper {
 
         @Override
         public void visitEnum (final String name, final String desc, final String value) {
-            __values.add (__instantiateEnum (desc, value));
+            __values.add (__instantiateEnum (desc, value, __classLoader));
         }
 
         @Override
@@ -172,9 +182,9 @@ final class AnnotationMapper {
     };
 
 
-    private static Class <?> __resolveClass (final Type type) {
+    private static Class <?> __resolveClass (final Type type, final ClassLoader classLoader) {
         try {
-            return Class.forName (type.getClassName ());
+            return ClassLoaderHelper.forName (type.getClassName (), classLoader);
 
         } catch (final ClassNotFoundException e) {
             throw new ParserRuntimeException (e);
@@ -183,12 +193,12 @@ final class AnnotationMapper {
 
 
     private static Object __instantiateEnum (
-        final String desc, final String value
-    ) {
+            final String desc, final String value, final ClassLoader classLoader
+            ) {
         final String className = Type.getType (desc).getClassName ();
 
         try {
-            final Class <?> enumClass = Class.forName (className);
+            final Class <?> enumClass = ClassLoaderHelper.forName (className, classLoader);
             final Method valueMethod = enumClass.getMethod ("valueOf", String.class );
             final Object result = valueMethod.invoke (null, value);
             if (result != null) {

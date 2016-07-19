@@ -60,11 +60,13 @@ public class WeavingCode {
     private final AbstractInsnNode[] insnArray;
     private int maxLocals;
 
+    private ClassLoader __classLoader;
+
     //
 
     public WeavingCode(
         final WeavingInfo weavingInfo, final MethodNode method, final SnippetCode src,
-        final Snippet snippet, final Shadow shadow, final AbstractInsnNode loc
+        final Snippet snippet, final Shadow shadow, final AbstractInsnNode loc, final ClassLoader classLoader
     ) {
         this.info = weavingInfo;
         this.method = method;
@@ -76,6 +78,7 @@ public class WeavingCode {
         this.insnList = code.getInstructions();
         this.insnArray = insnList.toArray();
         this.maxLocals = MaxCalculator.getMaxLocal (insnList, method.desc, method.access);
+        this.__classLoader = classLoader;
     }
 
 
@@ -1263,7 +1266,7 @@ public class WeavingCode {
 
         final char option = peConfig.charAt (1);
         final PartialEvaluator pe = new PartialEvaluator (
-            insns, code.getTryCatchBlocks(), method.desc, method.access
+            insns, code.getTryCatchBlocks(), method.desc, method.access, __classLoader
         );
 
         if (option >= '1' && option <= '3') {

@@ -51,7 +51,7 @@ final class ContextUsage {
 
     //
 
-    public static ContextUsage forMethod (final MethodNode method, final URLClassLoader urlClassLoader) {
+    public static ContextUsage forMethod (final MethodNode method, final ClassLoader classLoader) {
         //
         // Collect the kinds of contexts appearing in the arguments as well as
         // the types of static contexts.
@@ -60,7 +60,7 @@ final class ContextUsage {
         final Set <Type> staticContextTypes = new HashSet <Type> ();
 
         for (final Type argType : Type.getArgumentTypes (method.desc)) {
-            final ContextKind contextKind = ContextKind.forType (argType, urlClassLoader);
+            final ContextKind contextKind = ContextKind.forType (argType, classLoader);
             if (contextKind != null) {
                 usedContexts.add (contextKind);
                 if (contextKind == ContextKind.STATIC) {

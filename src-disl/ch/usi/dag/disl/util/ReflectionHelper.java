@@ -54,14 +54,14 @@ public final class ReflectionHelper {
      * Resolves the given ASM {@link Type} to a Java {@link Class}.
      *
      * @param type the type to resolve
-     * @param urlClassLoader The classloader to use to resolve the class, or null
+     * @param classLoader The classloader to use to resolve the class, or null
      * @return instance of {@link Class} corresponding to the given type
      * @throws ReflectionException if the class could not be resolved
      */
-    public static Class <?> resolveClass (final Type type, URLClassLoader urlClassLoader)
+    public static Class <?> resolveClass (final Type type, ClassLoader classLoader)
     throws ReflectionException {
         try {
-            return __classForType (type, urlClassLoader);
+            return __classForType (type, classLoader);
 
         } catch (final ClassNotFoundException e) {
             throw new ReflectionException (
@@ -76,12 +76,12 @@ public final class ReflectionHelper {
      * Returns {@code null} if the class could not be resolved.
      *
      * @param type the type to resolve
-     * @param urlClassLoader The classloader to use to resolve the class, or null
+     * @param classLoader The classloader to use to resolve the class, or null
      * @return instance of {@link Class} corresponding to the given type
      */
-    public static Class <?> tryResolveClass (final Type type, URLClassLoader urlClassLoader) {
+    public static Class <?> tryResolveClass (final Type type, final ClassLoader classLoader) {
         try {
-            return __classForType (type, urlClassLoader);
+            return __classForType (type, classLoader);
 
         } catch (final ClassNotFoundException e) {
             return null;
@@ -89,12 +89,9 @@ public final class ReflectionHelper {
     }
 
 
-    private static Class <?> __classForType (final Type type, URLClassLoader urlClassLoader)
-    throws ClassNotFoundException {
-        if (urlClassLoader != null)
-            return Class.forName(type.getClassName(), true, urlClassLoader);
-        else
-            return Class.forName (type.getClassName ());
+    private static Class <?> __classForType (final Type type, final ClassLoader classLoader)
+            throws ClassNotFoundException {
+        return ClassLoaderHelper.forName (type.getClassName (), classLoader);
     }
 
     //

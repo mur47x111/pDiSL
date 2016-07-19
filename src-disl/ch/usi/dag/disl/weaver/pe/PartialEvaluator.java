@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import ch.usi.dag.disl.Reflection;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -34,9 +35,10 @@ public class PartialEvaluator {
 
     private MethodNode method;
     private InsnList ilist;
+    private ClassLoader __classLoader;
 
     public PartialEvaluator(InsnList instructions,
-            List<TryCatchBlockNode> tryCatchBlocks, String desc, int access) {
+            List<TryCatchBlockNode> tryCatchBlocks, String desc, int access, ClassLoader classLoader) {
 
         ilist = instructions;
 
@@ -48,6 +50,8 @@ public class PartialEvaluator {
         method.desc = desc.substring(0, desc.lastIndexOf(')')) + ")V";
         method.maxLocals = MaxCalculator.getMaxLocal(ilist, desc, access);
         method.maxStack = MaxCalculator.getMaxStack(ilist, tryCatchBlocks);
+
+        __classLoader = classLoader;
     }
 
     private boolean removeUnusedBB(CtrlFlowGraph cfg) {
@@ -136,7 +140,7 @@ public class PartialEvaluator {
 
                     ConstValue value1 = FrameHelper.getStackByIndex(frame, 1);
                     ConstValue value2 = FrameHelper.getStackByIndex(frame, 0);
-                    result = ConstInterpreter.getInstance().binaryOperation(
+                    result = ConstInterpreter.getInstance(__classLoader).binaryOperation(
                             instr, value1, value2);
                     popTwice = true;
                     break;
@@ -145,7 +149,7 @@ public class PartialEvaluator {
                 default: {
 
                     ConstValue value = FrameHelper.getStackByIndex(frame, 0);
-                    result = ConstInterpreter.getInstance().unaryOperation(
+                    result = ConstInterpreter.getInstance(__classLoader).unaryOperation(
                             instr, value);
                     break;
                 }
@@ -316,7 +320,7 @@ public class PartialEvaluator {
             if (ConstInterpreter.mightBeUnaryConstOperation(instr)) {
 
                 ConstValue value = FrameHelper.getStackByIndex(frame, 0);
-                Object cst = ConstInterpreter.getInstance().unaryOperation(
+                Object cst = ConstInterpreter.getInstance(__classLoader).unaryOperation(
                         instr, value).cst;
 
                 if (insertLoadConstant(ilist, instr, cst)) {
@@ -332,7 +336,7 @@ public class PartialEvaluator {
 
                 ConstValue value1 = FrameHelper.getStackByIndex(frame, 1);
                 ConstValue value2 = FrameHelper.getStackByIndex(frame, 0);
-                Object cst = ConstInterpreter.getInstance().binaryOperation(
+                Object cst = ConstInterpreter.getInstance(__classLoader).binaryOperation(
                         instr, value1, value2).cst;
 
                 if (insertLoadConstant(ilist, instr, cst)) {
@@ -503,7 +507,7 @@ public class PartialEvaluator {
             case Opcodes.INVOKESPECIAL:
             case Opcodes.INVOKEVIRTUAL:
             case Opcodes.INVOKESTATIC:
-                if (!InvocationInterpreter.getInstance().isRegistered(
+                if (!InvocationInterpreter.getInstance(__classLoader).isRegistered(
                         (MethodInsnNode) source)) {
                     return true;
                 }
@@ -519,7 +523,7 @@ public class PartialEvaluator {
 
     private void tryRemoveInvocation(InsnList ilist, MethodInsnNode instr) {
 
-        if (InvocationInterpreter.getInstance().isRegistered(instr)) {
+        if (InvocationInterpreter.getInstance(__classLoader).isRegistered(instr)) {
 
             MethodInsnNode min = instr;
             String desc = min.desc;
@@ -726,7 +730,7 @@ public class PartialEvaluator {
 
         ilist.add(new InsnNode(Opcodes.RETURN));
         Analyzer<ConstValue> constAnalyzer = new Analyzer<ConstValue>(
-                ConstInterpreter.getInstance());
+                ConstInterpreter.getInstance(__classLoader));
         Map<AbstractInsnNode, Frame<ConstValue>> frames = FrameHelper
                 .createMapping(constAnalyzer, PartialEvaluator.class.getName(),
                         method);

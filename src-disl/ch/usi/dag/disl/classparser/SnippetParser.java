@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import ch.usi.dag.disl.util.ClassNodeExt;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import ch.usi.dag.disl.annotation.After;
@@ -113,11 +112,11 @@ class SnippetParser extends AbstractParser {
         final Marker marker = getMarker (data.marker, data.args);
         final Scope scope = ScopeMatcher.forPattern (data.scope);
         final Method guard = GuardHelper.findAndValidateGuardMethod (
-            AbstractParser.getGuard (data.guard, urlClassLoader), GuardHelper.snippetContextSet ()
+            AbstractParser.getGuard (data.guard, classLoader), GuardHelper.snippetContextSet ()
         );
 
         final SnippetUnprocessedCode template = new SnippetUnprocessedCode (
-            className, method, data.dynamicBypass, urlClassLoader
+            className, method, data.dynamicBypass, classLoader
         );
 
         //
@@ -142,7 +141,7 @@ class SnippetParser extends AbstractParser {
 
         ensureMethodIsStatic (method);
         ensureMethodReturnsVoid (method);
-        ensureMethodHasOnlyContextArguments (method, urlClassLoader);
+        ensureMethodHasOnlyContextArguments (method, classLoader);
         ensureMethodThrowsNoExceptions (method);
 
         ensureMethodIsNotEmpty (method);
@@ -261,7 +260,7 @@ class SnippetParser extends AbstractParser {
     private Marker getMarker (
         final Type markerType, final String markerParam
     ) throws ReflectionException, MarkerException {
-        final Class <?> rawMarkerClass = ReflectionHelper.resolveClass (markerType, urlClassLoader);
+        final Class <?> rawMarkerClass = ReflectionHelper.resolveClass (markerType, classLoader);
         final Class <? extends Marker> markerClass = rawMarkerClass.asSubclass (Marker.class);
 
         // instantiate marker WITHOUT Parameter as an argument

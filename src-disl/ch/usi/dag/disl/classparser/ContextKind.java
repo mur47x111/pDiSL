@@ -19,7 +19,7 @@ public enum ContextKind {
         private final Map <Type, Boolean> __cache = new HashMap <Type, Boolean> ();
 
         @Override
-        public boolean matches (final Type type, final URLClassLoader urlClassLoader) {
+        public boolean matches (final Type type, final ClassLoader classLoader) {
             //
             // Static context has to implement the StaticContext interface.
             //
@@ -27,14 +27,14 @@ public enum ContextKind {
             if (cachedResult != null) {
                 return cachedResult;
             } else {
-                final boolean result = __implementsStaticContext (type, urlClassLoader);
+                final boolean result = __implementsStaticContext (type, classLoader);
                 __cache.put (type,  result);
                 return result;
             }
         }
 
-        private boolean __implementsStaticContext (final Type type, final URLClassLoader urlClassLoader) {
-            final Class <?> typeClass = ReflectionHelper.tryResolveClass (type, urlClassLoader);
+        private boolean __implementsStaticContext (final Type type, final ClassLoader classLoader) {
+            final Class <?> typeClass = ReflectionHelper.tryResolveClass (type, classLoader);
             if (typeClass != null) {
                 return ReflectionHelper.implementsInterface (typeClass, _itfClass);
             } else {
@@ -65,16 +65,16 @@ public enum ContextKind {
     }
 
 
-    public boolean matches (final Type type, final URLClassLoader urlClassLoader) {
+    public boolean matches (final Type type, final ClassLoader classLoader) {
         return _itfType.equals (type);
     }
 
-    public static ContextKind forType (final Type type, final URLClassLoader urlClassLoader) {
+    public static ContextKind forType (final Type type, final ClassLoader classLoader) {
         //
         // Find the context that matches the type
         //
         for (final ContextKind context : ContextKind.values ()) {
-            if (context.matches (type, urlClassLoader)) {
+            if (context.matches (type, classLoader)) {
                 return context;
             }
         }

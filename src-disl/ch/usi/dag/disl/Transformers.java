@@ -1,5 +1,8 @@
 package ch.usi.dag.disl;
 
+import ch.usi.dag.disl.util.ClassLoaderHelper;
+
+import java.net.URLClassLoader;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,11 +46,11 @@ class Transformers {
     /**
      * Loads and instantiates {@link Transformer} classes.
      */
-    public static Transformers load (final Stream <String> transformers) {
+    public static Transformers load (final Stream <String> transformers, final URLClassLoader urlClassLoader) {
         try {
             return new Transformers (
                 transformers
-                    .map (className -> __createTransformer (className))
+                    .map (className -> __createTransformer (className, urlClassLoader))
                     .collect (Collectors.toList ())
             );
         } catch (final Exception e) {
@@ -58,8 +61,8 @@ class Transformers {
     }
 
 
-    private static Transformer __createTransformer (final String className) {
-        final Class <?> resolvedClass = __resolveTransformer (className);
+    private static Transformer __createTransformer (final String className, final URLClassLoader urlClassLoader) {
+        final Class <?> resolvedClass = __resolveTransformer (className, urlClassLoader);
         if (Transformer.class.isAssignableFrom (resolvedClass)) {
             return __instantiateTransformer (resolvedClass);
         } else {
@@ -71,9 +74,9 @@ class Transformers {
     }
 
 
-    private static Class <?> __resolveTransformer (final String className) {
+    private static Class <?> __resolveTransformer (final String className, final URLClassLoader urlClassLoader) {
         try {
-            return Class.forName (className);
+            return ClassLoaderHelper.forName(className, urlClassLoader);
 
         } catch (final Exception e) {
             throw new InitializationException (

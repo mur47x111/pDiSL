@@ -46,10 +46,10 @@ import ch.usi.dag.util.logging.Logger;
 abstract class AbstractParser {
 
     private final Logger __log = Logging.getPackageInstance ();
-    protected final URLClassLoader urlClassLoader;
+    protected final ClassLoader __classLoader;
 
-    public AbstractParser(URLClassLoader urlClassLoader){
-        this.urlClassLoader = urlClassLoader;
+    public AbstractParser(final ClassLoader classLoader){
+        __classLoader = classLoader;
     }
 
     //

@@ -1,8 +1,10 @@
 package ch.usi.dag.disl.weaver.pe;
 
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.List;
 
+import ch.usi.dag.disl.util.ClassLoaderHelper;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -23,7 +25,7 @@ public class ClassHelper {
         VALUE_TYPES.add("java/lang/String");
     }
 
-    public static Class<?> getClassFromType(Type type) {
+    public static Class<?> getClassFromType(Type type, final ClassLoader classLoader) {
 
         switch (type.getSort()) {
 
@@ -45,7 +47,7 @@ public class ClassHelper {
             return short.class;
         case Type.OBJECT:
             try {
-                return Class.forName(type.getClassName());
+                return ClassLoaderHelper.forName(type.getClassName(), classLoader);
             } catch (ClassNotFoundException e) {
                 return null;
             }
@@ -78,7 +80,7 @@ public class ClassHelper {
         }
     }
 
-    public static Class<?>[] getClasses(String desc)
+    public static Class<?>[] getClasses(String desc, final ClassLoader classLoader)
             throws ClassNotFoundException {
 
         Type[] types = Type.getArgumentTypes(desc);
@@ -86,7 +88,7 @@ public class ClassHelper {
 
         for (int i = 0; i < types.length; i++) {
 
-            classes[i] = getClassFromType(types[i]);
+            classes[i] = getClassFromType(types[i], classLoader);
 
             if (classes[i] == null) {
                 return null;
