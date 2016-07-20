@@ -1,18 +1,5 @@
 package ch.usi.dag.disl.classparser;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import ch.usi.dag.disl.util.ClassNodeExt;
-import ch.usi.dag.disl.util.Pair;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
-
 import ch.usi.dag.disl.DiSL.CodeOption;
 import ch.usi.dag.disl.InitializationException;
 import ch.usi.dag.disl.annotation.ArgumentProcessor;
@@ -23,7 +10,18 @@ import ch.usi.dag.disl.exception.StaticContextGenException;
 import ch.usi.dag.disl.localvar.LocalVars;
 import ch.usi.dag.disl.processor.ArgProcessor;
 import ch.usi.dag.disl.snippet.Snippet;
+import ch.usi.dag.disl.util.ClassNodeExt;
 import ch.usi.dag.disl.util.ClassNodeHelper;
+import ch.usi.dag.disl.util.Pair;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
+
+import java.net.URL;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -44,7 +42,7 @@ public final class DislClasses {
     //
 
     public static DislClasses load (
-        final Set <CodeOption> options, final Stream <Pair<String, URL>> classNamesAndUrls, URLClassLoader urlClassLoader
+        final Set <CodeOption> options, final Stream <Pair<String, URL>> classNamesAndUrls, final ClassLoader classLoader
     ) throws ParserException, StaticContextGenException, ReflectionException,
     ProcessorException {
         //
@@ -66,8 +64,8 @@ public final class DislClasses {
 
         //
 
-        final SnippetParser sp = new SnippetParser (urlClassLoader);
-        final ArgProcessorParser app = new ArgProcessorParser (urlClassLoader);
+        final SnippetParser sp = new SnippetParser (classLoader);
+        final ArgProcessorParser app = new ArgProcessorParser (classLoader);
 
         for (final ClassNodeExt classNode : classNodes) {
             if (__isArgumentProcessor (classNode)) {

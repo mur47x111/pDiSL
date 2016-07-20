@@ -1,29 +1,5 @@
 package ch.usi.dag.disl.classparser;
 
-import java.lang.reflect.Field;
-import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.IntInsnNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
-import org.objectweb.asm.tree.analysis.Frame;
-import org.objectweb.asm.tree.analysis.SourceValue;
-
 import ch.usi.dag.disl.annotation.SyntheticLocal;
 import ch.usi.dag.disl.exception.DiSLFatalException;
 import ch.usi.dag.disl.exception.ParserException;
@@ -31,14 +7,17 @@ import ch.usi.dag.disl.exception.ReflectionException;
 import ch.usi.dag.disl.localvar.LocalVars;
 import ch.usi.dag.disl.localvar.SyntheticLocalVar;
 import ch.usi.dag.disl.localvar.ThreadLocalVar;
-import ch.usi.dag.disl.util.AsmHelper;
+import ch.usi.dag.disl.util.*;
 import ch.usi.dag.disl.util.AsmHelper.Insns;
-import ch.usi.dag.disl.util.FrameHelper;
-import ch.usi.dag.disl.util.Insn;
-import ch.usi.dag.disl.util.JavaNames;
-import ch.usi.dag.disl.util.Logging;
-import ch.usi.dag.disl.util.ReflectionHelper;
 import ch.usi.dag.util.logging.Logger;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.SourceValue;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * Parses DiSL class with local variables.
@@ -505,7 +484,7 @@ abstract class AbstractParser {
 
 
     public static void ensureMethodHasOnlyContextArguments (
-        final MethodNode method, final URLClassLoader urlClassLoader
+        final MethodNode method, final ClassLoader classLoader
     ) throws ParserException {
         //
         // The type of each method argument must be a context of some kind.
@@ -514,7 +493,7 @@ abstract class AbstractParser {
         for (int argIndex = 0; argIndex < argTypes.length; argIndex++) {
             final Type argType = argTypes [argIndex];
 
-            final ContextKind contextType = ContextKind.forType (argType, urlClassLoader);
+            final ContextKind contextType = ContextKind.forType (argType, classLoader);
             if (contextType == null) {
                 throw new ParserException (
                     "argument #%d has invalid type, %s does not "+
@@ -593,13 +572,13 @@ abstract class AbstractParser {
     }
 
 
-    public static Class <?> getGuard (final Type guardType, URLClassLoader urlClassLoader)
+    public static Class <?> getGuard (final Type guardType, ClassLoader classLoader)
     throws ReflectionException {
         if (guardType == null) {
             return null;
         }
 
-        return ReflectionHelper.resolveClass (guardType, urlClassLoader);
+        return ReflectionHelper.resolveClass (guardType, classLoader);
     }
 
 }

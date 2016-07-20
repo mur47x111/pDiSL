@@ -1,20 +1,5 @@
 package ch.usi.dag.disl.classparser;
 
-import java.lang.reflect.Method;
-import java.net.URLClassLoader;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import ch.usi.dag.disl.util.ClassLoaderHelper;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import ch.usi.dag.disl.annotation.Guarded;
 import ch.usi.dag.disl.annotation.ProcessAlso;
 import ch.usi.dag.disl.coderep.UnprocessedCode;
@@ -25,8 +10,16 @@ import ch.usi.dag.disl.processor.ArgProcessor;
 import ch.usi.dag.disl.processor.ArgProcessorKind;
 import ch.usi.dag.disl.processor.ArgProcessorMethod;
 import ch.usi.dag.disl.util.AsmHelper;
+import ch.usi.dag.disl.util.ClassLoaderHelper;
 import ch.usi.dag.disl.util.JavaNames;
 import ch.usi.dag.util.Strings;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 class ArgProcessorParser extends AbstractParser {
@@ -41,8 +34,8 @@ class ArgProcessorParser extends AbstractParser {
         return __processors;
     }
 
-    public ArgProcessorParser(URLClassLoader urlClassLoader){
-        super(urlClassLoader);
+    public ArgProcessorParser(final ClassLoader classLoader){
+        super(classLoader);
     }
 
     //

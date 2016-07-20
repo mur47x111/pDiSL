@@ -1,13 +1,12 @@
 package ch.usi.dag.disl.weaver.pe;
 
-import java.net.URLClassLoader;
-import java.util.HashSet;
-import java.util.List;
-
 import ch.usi.dag.disl.util.ClassLoaderHelper;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
+
+import java.util.HashSet;
+import java.util.List;
 
 public class ClassHelper {
 

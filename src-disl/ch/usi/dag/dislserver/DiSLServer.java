@@ -1,9 +1,16 @@
 package ch.usi.dag.dislserver;
 
+import ch.usi.dag.disl.exception.DiSLException;
+import ch.usi.dag.disl.util.Logging;
+import ch.usi.dag.util.logging.Logger;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
+import java.net.URL;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -11,10 +18,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import ch.usi.dag.disl.exception.DiSLException;
-import ch.usi.dag.disl.util.Logging;
-import ch.usi.dag.util.logging.Logger;
 
 
 public final class DiSLServer {

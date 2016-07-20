@@ -1,5 +1,14 @@
 package ch.usi.dag.dislserver;
 
+import ch.usi.dag.disl.DiSL;
+import ch.usi.dag.disl.DiSL.CodeOption;
+import ch.usi.dag.disl.exception.DiSLException;
+import ch.usi.dag.disl.util.JavaNames;
+import ch.usi.dag.disl.util.Logging;
+import ch.usi.dag.util.Strings;
+import ch.usi.dag.util.logging.Logger;
+import org.objectweb.asm.ClassReader;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -12,16 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import org.objectweb.asm.ClassReader;
-
-import ch.usi.dag.disl.DiSL;
-import ch.usi.dag.disl.DiSL.CodeOption;
-import ch.usi.dag.disl.exception.DiSLException;
-import ch.usi.dag.disl.util.JavaNames;
-import ch.usi.dag.disl.util.Logging;
-import ch.usi.dag.util.Strings;
-import ch.usi.dag.util.logging.Logger;
 
 
 final class RequestProcessor {
@@ -57,6 +56,10 @@ final class RequestProcessor {
                 className.isEmpty () ? "<unknown>" : className,
                 classBytes.length, Strings.join ("+", options)
             );
+        }
+
+        if (!className.startsWith("java") && !className.startsWith("sun")){
+            __log.debug("not java/sun");
         }
 
         //

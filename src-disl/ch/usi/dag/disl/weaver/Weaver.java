@@ -1,19 +1,5 @@
 package ch.usi.dag.disl.weaver;
 
-import java.util.List;
-import java.util.Map;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TryCatchBlockNode;
-
 import ch.usi.dag.disl.annotation.After;
 import ch.usi.dag.disl.annotation.AfterReturning;
 import ch.usi.dag.disl.annotation.AfterThrowing;
@@ -29,6 +15,12 @@ import ch.usi.dag.disl.snippet.SnippetCode;
 import ch.usi.dag.disl.staticcontext.generator.SCGenerator;
 import ch.usi.dag.disl.util.AsmHelper;
 import ch.usi.dag.disl.util.AsmHelper.Insns;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
+
+import java.util.List;
+import java.util.Map;
 
 // The weaver instruments byte-codes into java class.
 public class Weaver {
@@ -216,7 +208,7 @@ public class Weaver {
         final MethodNode methodNode,
         final SCGenerator staticInfoHolder, final PIResolver piResolver,
         final WeavingInfo info, final Snippet snippet, final SnippetCode code,
-        final Shadow shadow, final AbstractInsnNode loc
+        final Shadow shadow, final AbstractInsnNode loc, final ClassLoader classLoader
     ) throws InvalidContextUsageException {
         // exception handler will discard the stack and push the
         // exception object. Thus, before entering this snippet,
@@ -232,7 +224,7 @@ public class Weaver {
         }
 
         final WeavingCode wc = new WeavingCode (
-            info, methodNode, code, snippet, shadow, loc
+            info, methodNode, code, snippet, shadow, loc, classLoader
         );
 
         wc.transform (staticInfoHolder, piResolver, false);
@@ -246,7 +238,7 @@ public class Weaver {
         final ClassNode classNode, final MethodNode methodNode,
         final Map <Snippet, List <Shadow>> snippetShadows,
         final List <SyntheticLocalVar> syntheticLocalVars,
-        final SCGenerator staticInfoHolder, final PIResolver piResolver
+        final SCGenerator staticInfoHolder, final PIResolver piResolver, final ClassLoader classLoader
     ) throws InvalidContextUsageException {
 
         final WeavingInfo info = new WeavingInfo(classNode, methodNode, snippetShadows);
@@ -274,7 +266,7 @@ public class Weaver {
 
                     __insert (
                         methodNode, staticInfoHolder, piResolver, info,
-                        snippet, code, shadow, loc
+                        snippet, code, shadow, loc, classLoader
                     );
 
                     //
@@ -304,7 +296,7 @@ public class Weaver {
                     for (final AbstractInsnNode loc : shadow.getWeavingRegion ().getEnds ()) {
                         __insert (
                             methodNode, staticInfoHolder, piResolver, info,
-                            snippet, code, shadow, loc
+                            snippet, code, shadow, loc, classLoader
                         );
 
                         //
@@ -339,7 +331,7 @@ public class Weaver {
                     final AbstractInsnNode loc = region.getAfterThrowEnd ();
 
                     final WeavingCode wc = new WeavingCode (
-                        info, methodNode, code, snippet, shadow, loc
+                        info, methodNode, code, snippet, shadow, loc, classLoader
                     );
 
                     wc.transform (staticInfoHolder, piResolver, true);

@@ -1,39 +1,28 @@
 package ch.usi.dag.disl.classparser;
 
-import java.lang.reflect.Method;
-import java.net.URLClassLoader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import ch.usi.dag.disl.util.ClassNodeExt;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import ch.usi.dag.disl.annotation.After;
 import ch.usi.dag.disl.annotation.AfterReturning;
 import ch.usi.dag.disl.annotation.AfterThrowing;
 import ch.usi.dag.disl.annotation.Before;
-import ch.usi.dag.disl.exception.DiSLFatalException;
-import ch.usi.dag.disl.exception.GuardException;
-import ch.usi.dag.disl.exception.MarkerException;
-import ch.usi.dag.disl.exception.ParserException;
-import ch.usi.dag.disl.exception.ReflectionException;
-import ch.usi.dag.disl.exception.SnippetParserException;
+import ch.usi.dag.disl.exception.*;
 import ch.usi.dag.disl.guard.GuardHelper;
 import ch.usi.dag.disl.marker.Marker;
 import ch.usi.dag.disl.marker.Parameter;
-import ch.usi.dag.disl.scope.ScopeMatcher;
 import ch.usi.dag.disl.scope.Scope;
+import ch.usi.dag.disl.scope.ScopeMatcher;
 import ch.usi.dag.disl.snippet.Snippet;
 import ch.usi.dag.disl.snippet.SnippetUnprocessedCode;
 import ch.usi.dag.disl.util.AsmHelper;
+import ch.usi.dag.disl.util.ClassNodeExt;
 import ch.usi.dag.disl.util.JavaNames;
 import ch.usi.dag.disl.util.ReflectionHelper;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -49,8 +38,8 @@ class SnippetParser extends AbstractParser {
         return snippets;
     }
 
-    public SnippetParser(URLClassLoader urlClassLoader){
-        super(urlClassLoader);
+    public SnippetParser(ClassLoader classLoader){
+        super(classLoader);
     }
 
     //
@@ -112,11 +101,11 @@ class SnippetParser extends AbstractParser {
         final Marker marker = getMarker (data.marker, data.args);
         final Scope scope = ScopeMatcher.forPattern (data.scope);
         final Method guard = GuardHelper.findAndValidateGuardMethod (
-            AbstractParser.getGuard (data.guard, classLoader), GuardHelper.snippetContextSet ()
+            AbstractParser.getGuard (data.guard, __classLoader), GuardHelper.snippetContextSet ()
         );
 
         final SnippetUnprocessedCode template = new SnippetUnprocessedCode (
-            className, method, data.dynamicBypass, classLoader
+            className, method, data.dynamicBypass, __classLoader
         );
 
         //
@@ -141,7 +130,7 @@ class SnippetParser extends AbstractParser {
 
         ensureMethodIsStatic (method);
         ensureMethodReturnsVoid (method);
-        ensureMethodHasOnlyContextArguments (method, classLoader);
+        ensureMethodHasOnlyContextArguments (method, __classLoader);
         ensureMethodThrowsNoExceptions (method);
 
         ensureMethodIsNotEmpty (method);
@@ -260,7 +249,7 @@ class SnippetParser extends AbstractParser {
     private Marker getMarker (
         final Type markerType, final String markerParam
     ) throws ReflectionException, MarkerException {
-        final Class <?> rawMarkerClass = ReflectionHelper.resolveClass (markerType, classLoader);
+        final Class <?> rawMarkerClass = ReflectionHelper.resolveClass (markerType, __classLoader);
         final Class <? extends Marker> markerClass = rawMarkerClass.asSubclass (Marker.class);
 
         // instantiate marker WITHOUT Parameter as an argument

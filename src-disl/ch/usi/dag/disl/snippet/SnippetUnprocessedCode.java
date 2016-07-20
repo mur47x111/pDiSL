@@ -1,21 +1,5 @@
 package ch.usi.dag.disl.snippet;
 
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import ch.usi.dag.disl.DiSL.CodeOption;
 import ch.usi.dag.disl.coderep.Code;
 import ch.usi.dag.disl.coderep.UnprocessedCode;
@@ -29,6 +13,11 @@ import ch.usi.dag.disl.processorcontext.ArgumentProcessorContext;
 import ch.usi.dag.disl.processorcontext.ArgumentProcessorMode;
 import ch.usi.dag.disl.util.AsmHelper.Insns;
 import ch.usi.dag.disl.util.CodeTransformer;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
+
+import java.util.*;
 
 
 /**
@@ -48,7 +37,7 @@ public class SnippetUnprocessedCode {
      */
     private final UnprocessedCode __template;
 
-    private final URLClassLoader __urlClassLoader;
+    private final ClassLoader __classLoader;
 
     //
 
@@ -59,10 +48,10 @@ public class SnippetUnprocessedCode {
      */
     public SnippetUnprocessedCode (
             final String className, final MethodNode method,
-            final boolean snippetDynamicBypass, final URLClassLoader urlClassLoader
+            final boolean snippetDynamicBypass, final ClassLoader classLoader
             ) {
-        __urlClassLoader = urlClassLoader;
-        __template = new UnprocessedCode (className, method, __urlClassLoader);
+        __classLoader = classLoader;
+        __template = new UnprocessedCode (className, method, __classLoader);
         __snippetDynamicBypass = snippetDynamicBypass;
     }
 

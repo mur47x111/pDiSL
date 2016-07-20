@@ -1,28 +1,5 @@
 package ch.usi.dag.disl;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import ch.usi.dag.disl.util.ClassNodeExt;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import ch.usi.dag.disl.classparser.DislClasses;
 import ch.usi.dag.disl.exception.DiSLException;
 import ch.usi.dag.disl.exception.DiSLInMethodException;
@@ -37,10 +14,23 @@ import ch.usi.dag.disl.scope.Scope;
 import ch.usi.dag.disl.snippet.Shadow;
 import ch.usi.dag.disl.snippet.Snippet;
 import ch.usi.dag.disl.staticcontext.generator.SCGenerator;
+import ch.usi.dag.disl.util.ClassNodeExt;
 import ch.usi.dag.disl.util.ClassNodeHelper;
 import ch.usi.dag.disl.util.Logging;
 import ch.usi.dag.disl.weaver.Weaver;
 import ch.usi.dag.util.logging.Logger;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -65,7 +55,7 @@ public final class DiSL {
 
     private final DislClasses __dislClasses;
 
-    private final URLClassLoader __urlClassLoader;
+    private final ClassLoader __classLoader;
 
 
     /**
@@ -94,10 +84,10 @@ public final class DiSL {
         }
 
         final ClassResources resources = ClassResources.discover (properties);
-        __transformers = Transformers.load (resources.transformers ());
+        __transformers = Transformers.load (resources.transformers (), null);
         __excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
         __dislClasses = DislClasses.load (__codeOptions, resources.classUrlPairs (), null);
-        __urlClassLoader = null;
+        __classLoader = null;
     }
 
 
@@ -107,13 +97,13 @@ public final class DiSL {
     private DiSL (
         final Set <CodeOption> codeOptions, final Transformers transformers,
         final Set <Scope> excludedScopes, final DislClasses dislClasses,
-        final URLClassLoader urlClassLoader
+        final ClassLoader classLoader
     ) {
         __codeOptions = codeOptions;
         __transformers = transformers;
         __excludedScopes = excludedScopes;
         __dislClasses = dislClasses;
-        __urlClassLoader = urlClassLoader;
+        __classLoader = classLoader;
     }
 
 
@@ -176,7 +166,7 @@ public final class DiSL {
         List<URL> classPathUrls = resources.classloaderUrls();
         final URLClassLoader theClassLoader = URLClassLoader.newInstance(classPathUrls.toArray(new URL[classPathUrls.size()]), DiSL.class.getClassLoader());
 
-        final Transformers transformers = Transformers.load (resources.transformers ());
+        final Transformers transformers = Transformers.load (resources.transformers (), theClassLoader);
         final Set <Scope> excludedScopes = ExclusionSet.prepare (resources.instrumentationResources ());
         final DislClasses dislClasses = DislClasses.load (codeOptions, resources.classUrlPairs(), theClassLoader);
 
@@ -355,7 +345,7 @@ public final class DiSL {
             Weaver.instrument (
                 classNode, methodNode, snippetMarkings,
                 new LinkedList <SyntheticLocalVar> (usedSLVs),
-                staticInfo, piResolver
+                staticInfo, piResolver, __classLoader
             );
 
             return true;
