@@ -1,7 +1,6 @@
 package ch.usi.dag.disl.classparser;
 
 import java.lang.reflect.Method;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

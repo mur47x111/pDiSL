@@ -1,6 +1,5 @@
 package ch.usi.dag.disl.classparser;
 
-import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -3,7 +3,6 @@ package ch.usi.dag.disl.util;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URLClassLoader;
 
 import org.objectweb.asm.Type;
 

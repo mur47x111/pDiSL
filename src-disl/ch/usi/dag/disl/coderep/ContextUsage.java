@@ -1,6 +1,5 @@
 package ch.usi.dag.disl.coderep;
 
-import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
