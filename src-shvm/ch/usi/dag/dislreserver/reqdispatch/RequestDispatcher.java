@@ -58,7 +58,7 @@ public final class RequestDispatcher {
         requestMap.put (__REQUEST_ID_NEW_CLASS__, new NewClassHandler ());
         requestMap.put (__REQUEST_ID_CLASS_INFO__, new ClassInfoHandler ());
         requestMap.put (__REQUEST_ID_STRING_INFO__, new StringInfoHandler ());
-        requestMap.put (__REQUEST_ID_REGISTER_ANALYSIS__, new RegAnalysisHandler ());
+        requestMap.put (__REQUEST_ID_REGISTER_ANALYSIS__, new RegAnalysisHandler (null));
         requestMap.put (__REQUEST_ID_THREAD_INFO__, new ThreadInfoHandler());
         requestMap.put (__REQUEST_ID_THREAD_END__,  new ThreadEndHandler(anlHndl));
 

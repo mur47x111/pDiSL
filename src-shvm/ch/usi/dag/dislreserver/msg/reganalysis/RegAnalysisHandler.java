@@ -10,6 +10,12 @@ import ch.usi.dag.dislreserver.reqdispatch.RequestHandler;
 
 public final class RegAnalysisHandler implements RequestHandler {
 
+    private ClassLoader __classLoader;
+
+    public RegAnalysisHandler(ClassLoader classLoader){
+        __classLoader = classLoader;
+    }
+
     public void handle(final DataInputStream is, final DataOutputStream os,
             final boolean debug) throws DiSLREServerException {
         try {
@@ -17,7 +23,7 @@ public final class RegAnalysisHandler implements RequestHandler {
             String methodString = is.readUTF();
 
             // register method
-            AnalysisResolver.registerMethodId(methodId, methodString);
+            AnalysisResolver.registerMethodId(methodId, methodString, __classLoader);
 
             if (debug) {
                 System.out.printf(

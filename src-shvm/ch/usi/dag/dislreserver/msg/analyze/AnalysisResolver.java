@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ch.usi.dag.dislreserver.util.ClassLoaderHelper;
 import ch.usi.dag.dislreserver.DiSLREServerException;
 import ch.usi.dag.dislreserver.DiSLREServerFatalException;
 import ch.usi.dag.dislreserver.remoteanalysis.RemoteAnalysis;
@@ -49,7 +50,7 @@ public final class AnalysisResolver {
 
     //
 
-    private static AnalysisMethodHolder resolveMethod (String methodStr
+    private static AnalysisMethodHolder resolveMethod (String methodStr, final ClassLoader classLoader
     ) throws DiSLREServerException {
         try {
             int classNameEnd = methodStr.lastIndexOf (METHOD_DELIM);
@@ -62,7 +63,7 @@ public final class AnalysisResolver {
             RemoteAnalysis raInst = analysisMap.get (className);
             if (raInst == null) {
                 // resolve class
-                Class <?> raClass = Class.forName (className);
+                Class <?> raClass = ClassLoaderHelper.forName (className, classLoader);
 
                 // create instance
                 raInst = (RemoteAnalysis) raClass.newInstance ();
@@ -131,9 +132,9 @@ public final class AnalysisResolver {
 
 
     public static void registerMethodId (
-        final short methodId, String methodString
+        final short methodId, String methodString, final ClassLoader classLoader
     ) throws DiSLREServerException {
-        methodMap.put(methodId, resolveMethod(methodString));
+        methodMap.put(methodId, resolveMethod(methodString, classLoader));
     }
 
 
