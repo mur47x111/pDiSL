@@ -454,8 +454,8 @@ def run_evaluation(args, parser):
 	e_cmd = ["java"]
 	e_cmd+= args.s_opts
 	e_cmd+= ["-Xms1G", "-Xmx2G"]
-	# e_cmd+= ["-cp", args.instrumentation + ":" + e_jar]
-	e_cmd+= ["-cp", e_jar]
+	e_cmd+= ["-cp", args.instrumentation + ":" + e_jar]
+	# e_cmd+= ["-cp", e_jar]
 	e_cmd+= [e_class]
 	e_cmd+= args.e_args
 
@@ -492,11 +492,11 @@ def run_client(args, parser):
 		c_cmd+= ["-agentpath:"+eagent]
 
 	if args.cse == True:
-		# c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation+":"+dispatch]
-		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+dispatch]
+		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation+":"+dispatch]
+		# c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+dispatch]
 	else:
-		# c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation]
-		c_cmd+= ["-Xbootclasspath/a:"+bypass]
+		c_cmd+= ["-Xbootclasspath/a:"+bypass+":"+args.instrumentation]
+		# c_cmd+= ["-Xbootclasspath/a:"+bypass]
 
 	c_cmd+= ["-Ddisl.instrumentationjarpath="+args.instrumentation]
 

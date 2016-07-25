@@ -16,15 +16,11 @@ import org.objectweb.asm.tree.analysis.Interpreter;
 
 public class ConstInterpreter extends Interpreter<ConstValue> {
 
-    protected ClassLoader __classloader;
+    protected ClassLoader __classLoader;
 
     protected ConstInterpreter(ClassLoader classLoader) {
         super(Opcodes.ASM5);
-        __classloader = classLoader;
-    }
-
-    private void setClassloader(ClassLoader classloader){
-        __classloader = classloader;
+        __classLoader = classLoader;
     }
 
     @Override
@@ -566,8 +562,8 @@ public class ConstInterpreter extends Interpreter<ConstValue> {
 
             int size = Type.getReturnType(((MethodInsnNode) insn).desc)
                     .getSize();
-            Object cst = InvocationInterpreter.getInstance(__classloader).execute(
-                    (MethodInsnNode) insn, values);
+            Object cst = InvocationInterpreter.getInstance().execute(
+                    (MethodInsnNode) insn, values, __classLoader);
             return new ConstValue(size, cst);
         }
 
@@ -588,15 +584,17 @@ public class ConstInterpreter extends Interpreter<ConstValue> {
         return new ConstValue(Math.min(d.size, w.size));
     }
 
-    private static ConstInterpreter instance;
+//    private static ConstInterpreter instance;
 
     public static ConstInterpreter getInstance(ClassLoader classLoader) {
-        if (instance == null) {
-            instance = new ConstInterpreter(classLoader);
-        }
+//        if (instance == null) {
+//            instance = new ConstInterpreter(classLoader);
+//        }
+//
+//
+//        return instance;
 
-        instance.setClassloader(classLoader);
-
-        return instance;
+//        This might be very inefficient, since the method requiring the class loader is never(?) called
+        return new ConstInterpreter(classLoader);
     }
 }

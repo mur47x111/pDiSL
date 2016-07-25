@@ -81,6 +81,14 @@ public enum ClassNodeHelper {
         return result;
     }
 
+    /**
+     * Reads a class from a jar file.
+     * @param className
+     * @param jarBaseUrl
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     */
     public ClassNodeExt loadFromURL(final String className, URL jarBaseUrl) throws IOException, URISyntaxException{
         final ClassNodeExt result = new ClassNodeExt(Opcodes.ASM5);
         ClassReaderOTF.getClassReader(className, jarBaseUrl).accept(result, __flags);

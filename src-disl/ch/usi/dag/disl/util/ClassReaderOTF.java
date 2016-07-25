@@ -13,6 +13,8 @@ import java.util.jar.JarFile;
 
 /**
  * Created by alexandernorth on 08/07/16.
+ * This class allows us to use the ClassReader with dynamic JAR paths.
+ * It finds the class inside the JAR file, and then creates a new ClassReader using an input stream.
  */
 public class ClassReaderOTF {
 

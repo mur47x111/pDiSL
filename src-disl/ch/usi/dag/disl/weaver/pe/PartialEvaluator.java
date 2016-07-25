@@ -507,7 +507,7 @@ public class PartialEvaluator {
             case Opcodes.INVOKESPECIAL:
             case Opcodes.INVOKEVIRTUAL:
             case Opcodes.INVOKESTATIC:
-                if (!InvocationInterpreter.getInstance(__classLoader).isRegistered(
+                if (!InvocationInterpreter.getInstance().isRegistered(
                         (MethodInsnNode) source)) {
                     return true;
                 }
@@ -523,7 +523,7 @@ public class PartialEvaluator {
 
     private void tryRemoveInvocation(InsnList ilist, MethodInsnNode instr) {
 
-        if (InvocationInterpreter.getInstance(__classLoader).isRegistered(instr)) {
+        if (InvocationInterpreter.getInstance().isRegistered(instr)) {
 
             MethodInsnNode min = instr;
             String desc = min.desc;

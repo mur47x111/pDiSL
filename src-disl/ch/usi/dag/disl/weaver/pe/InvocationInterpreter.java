@@ -15,19 +15,13 @@ import ch.usi.dag.disl.util.JavaNames;
 public class InvocationInterpreter {
 
     private HashSet<String> registeredMethods;
-    private ClassLoader __classLoader;
 
-    public InvocationInterpreter(final ClassLoader classLoader) {
-        __classLoader = classLoader;
+    public InvocationInterpreter() {
         registeredMethods = new HashSet<String>();
     }
 
-    private void setClassLoader(ClassLoader classLoader){
-        __classLoader = classLoader;
-    }
-
     public Object execute(MethodInsnNode instr,
-            List<? extends ConstValue> values) {
+            List<? extends ConstValue> values, ClassLoader classLoader) {
 
         int opcode = instr.getOpcode();
 
@@ -61,8 +55,8 @@ public class InvocationInterpreter {
 
         try {
 
-            Class<?> clazz = ClassLoaderHelper.forName(instr.owner.replace('/', '.'), __classLoader);
-            Class<?>[] parameters = ClassHelper.getClasses(instr.desc, __classLoader);
+            Class<?> clazz = ClassLoaderHelper.forName(instr.owner.replace('/', '.'), classLoader);
+            Class<?>[] parameters = ClassHelper.getClasses(instr.desc, classLoader);
 
             if (parameters == null) {
                 return null;
@@ -82,7 +76,7 @@ public class InvocationInterpreter {
 
                 Object caller = ClassHelper.getCaller(instr, values);
                 Class<?> retType = ClassHelper.getClassFromType(Type
-                        .getReturnType(instr.desc), __classLoader);
+                        .getReturnType(instr.desc), classLoader);
 
                 if (retType == null) {
                     return null;
@@ -128,11 +122,11 @@ public class InvocationInterpreter {
 
     private static InvocationInterpreter instance;
 
-    public static InvocationInterpreter getInstance(ClassLoader classLoader) {
+    public static InvocationInterpreter getInstance() {
 
         if (instance == null) {
 
-            instance = new InvocationInterpreter(classLoader);
+            instance = new InvocationInterpreter();
 
             instance.register(Boolean.class);
             instance.register(Byte.class);
@@ -145,8 +139,6 @@ public class InvocationInterpreter {
             instance.register(String.class);
             instance.register(StringBuilder.class);
         }
-
-        instance.setClassLoader(classLoader);
 
         return instance;
     }
