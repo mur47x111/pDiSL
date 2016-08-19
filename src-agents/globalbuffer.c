@@ -7,7 +7,8 @@
 #include "pbmanager.h"
 #include "tagger.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 // number of analysis requests in one message
 #define ANALYSIS_COUNT 16384

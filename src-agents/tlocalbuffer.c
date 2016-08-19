@@ -8,7 +8,8 @@
 #include "tagger.h"
 #include "globalbuffer.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 // number of analysis requests in one message
 #define ANALYSIS_COUNT 16384

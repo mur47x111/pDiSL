@@ -300,9 +300,6 @@
 				</ac:if>
 			</ac:else>
 		</ac:if>
-
-		<property name="disl.agent.lib" value="${dl.prefix}${disl.agent.lib.base}${dl.suffix}"/>
-		<property name="shvm.agent.lib" value="${dl.prefix}${shvm.agent.lib.base}${dl.suffix}"/>
 		<property name="merged.agent.lib" value="${dl.prefix}${merged.agent.lib.base}${dl.suffix}"/>
 	</target>
 
@@ -499,7 +496,7 @@
 		header using "javah" after compiling DiSL.
 	-->
 	<target name="-check-disl-agent-codeflags">
-		<property name="build.disl.agent.codeflags.path" value="${src.disl.agent}/codeflags.h"/>
+		<property name="build.disl.agent.codeflags.path" value="${src.merged.agent}/codeflags.h"/>
 		<uptodate property="build.disl.agent.codeflags.uptodate" targetfile="${build.disl.agent.codeflags.path}">
 			<srcfiles dir="${src.disl}" includes="**/DiSL.java"/>
 		</uptodate>
@@ -526,7 +523,7 @@
 		the necessary bytecode.
 	-->
 	<target name="-check-disl-agent-bytecode">
-		<property name="build.disl.agent.bytecode.path" value="${src.disl.agent}/bytecode.c"/>
+		<property name="build.disl.agent.bytecode.path" value="${src.merged.agent}/bytecode.c"/>
 		<uptodate property="build.disl.agent.bytecode.uptodate" targetfile="${build.disl.agent.bytecode.path}">
 			<srcfiles dir="${src.disl.bypass}"/>
 		</uptodate>
@@ -594,13 +591,6 @@
 	<target name="-prepare-disl-agent" depends="-generate-disl-agent-codeflags-if-needed,-generate-disl-agent-bytecode-if-needed"/>
 
 
-	<target name="compile-disl-agent" depends="-prepare-disl-agent">
-		<exec executable="make" dir="${src.disl.agent}">
-			<arg value="WHOLE=1"/>
-		</exec>
-	</target>
-
-
 	<!--
 		This target cross-compiles the DiSL agent library for
 		Windows using MinGW. It is currently not used in the
@@ -611,11 +601,6 @@
 			<arg value="WHOLE=1"/>
 			<arg value="TARGET_ENV=MinGW"/>
 		</exec>
-	</target>
-
-
-	<target name="build-disl-agent" depends="compile-disl-agent,-determine-lib-names">
-		<copy file="${src.disl.agent}/${disl.agent.lib}" todir="${out.lib}"/>
 	</target>
 
 
@@ -657,22 +642,9 @@
 		</jar>
 	</target>
 
-	<!-- Shadow VM agent -->
-
-	<target name="compile-shvm-agent">
-		<exec executable="make" dir="${src.shvm.agent}">
-			<arg value="WHOLE=1"/>
-		</exec>
-	</target>
-
-
-	<target name="build-shvm-agent" depends="compile-shvm-agent,-determine-lib-names">
-		<copy file="${src.shvm.agent}/${shvm.agent.lib}" todir="${out.lib}"/>
-	</target>
-
 
 	<!-- Merged agent -->
-	<target name="compile-agent">
+	<target name="compile-agent" depends="-prepare-disl-agent">
 		<exec executable="make" dir="${src.merged.agent}">
 			<arg value="WHOLE=1"/>
 		</exec>
@@ -1126,13 +1098,6 @@
 
 
 	<target name="clean" description="Removes all files produced during the build.">
-		<exec executable="make" dir="${src.disl.agent}">
-			<arg value="cleanall"/>
-		</exec>
-
-		<exec executable="make" dir="${src.shvm.agent}">
-			<arg value="cleanall"/>
-		</exec>
 
 		<exec executable="make" dir="${src.merged.agent}">
 			<arg value="cleanall"/>

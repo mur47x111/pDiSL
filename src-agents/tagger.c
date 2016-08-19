@@ -11,7 +11,8 @@
 #include "pbmanager.h"
 #include "sender.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 static jclass THREAD_CLASS = NULL;
 static jclass STRING_CLASS = NULL;

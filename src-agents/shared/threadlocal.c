@@ -2,7 +2,7 @@
 
 #include "threadlocal.h"
 
-#include "../../src-disl-agent/jvmtiutil.h"
+#include "../jvmtiutil.h"
 
 // *** Thread locals ***
 

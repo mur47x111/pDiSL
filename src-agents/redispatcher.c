@@ -12,7 +12,8 @@
 #include "tagger.h"
 #include "freehandler.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 // ******************* Advanced packing routines *******************
 

@@ -3,7 +3,7 @@
 
 #include "blockingqueue.h"
 
-#include "../../src-disl-agent/jvmtiutil.h"
+#include "../jvmtiutil.h"
 
 // ** Monitor helper functions **
 

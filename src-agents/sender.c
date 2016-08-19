@@ -11,7 +11,8 @@
 
 #include "pbmanager.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 // ******************* Communication *******************
 

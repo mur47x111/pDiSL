@@ -7,7 +7,8 @@
 #include "pbmanager.h"
 #include "sender.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 static jvmtiEnv * jvmti_env;
 static jrawMonitorID obj_free_lock;

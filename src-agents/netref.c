@@ -6,7 +6,8 @@
 #include "shared/buffpack.h"
 #include "shared/messagetype.h"
 
-#include "../src-disl-agent/jvmtiutil.h"
+#include "jvmtiutil.h"
+
 
 // first available object id
 static volatile jlong avail_object_id = 1;
