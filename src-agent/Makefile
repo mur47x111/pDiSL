@@ -2,7 +2,7 @@
 -include Makefile.local
 
 INCLUDE_DIR ?= ../src-jdk-include
-LIBRARY_BASE ?= dislreagent
+LIBRARY_BASE ?= dislagents
 
 ifeq ($(OS),Windows_NT)
     ifeq (,$(findstring /cygdrive/,$(PATH)))
@@ -24,10 +24,8 @@ LIBRARY_MACOSX = lib$(LIBRARY_BASE).jnilib
 LIBRARY_LINUX = lib$(LIBRARY_BASE).so
 
 ifneq ($(HOST_ENV),$(TARGET_ENV))
-    ifneq ($(TARGET_ENV),MinGW)
-        $(error Cross-compiling is only supported for TARGET_ENV=MinGW)
-    else
-        $(warning The MinGW port for the Windows platform is experimental!)
+    ifeq (,$(filter MinGW DarwinX,$(TARGET_ENV)))
+        $(error Cross-compiling is only supported for TARGET_ENV=MinGW or TARGET_ENV=DarwinX)
     endif
 endif
 
@@ -40,32 +38,47 @@ ifneq (,$(filter MinGW Cygwin,$(TARGET_ENV)))
 
         CFLAGS += -DMINGW -mthreads
         CFLAGS_LD += -Wl,--kill-at
+        CFLAGS_PARTS := -flto
+        CFLAGS_WHOLE := -flto -fwhole-program
+
         LIBS += -lws2_32
     endif
 
-else ifeq (Darwin,$(TARGET_ENV))
+else ifneq (,$(filter DarwinX Darwin,$(TARGET_ENV)))
     JDK_TARGET := macosx
     LIBRARY := $(LIBRARY_MACOSX)
+
+    ifeq (DarwinX,$(TARGET_ENV))
+        CC := darwinx-gcc
+        CFLAGS += -DDARWINX
+    endif
 
 else ifeq (Linux,$(TARGET_ENV))
     LIBRARY := $(LIBRARY_LINUX)
     JDK_TARGET := linux
 
-    CFLAGS_WHOLE := -fwhole-program
+    #
+    # Despite the GCC documentation saying that -flto should not be used with
+    # -fwhole-program, the option needs to be there, otherwise GCC produces a
+    # library with undefined symbols (bypass bytecode) despite them being present.
+    #
+    CFLAGS_PARTS := -flto
+    CFLAGS_WHOLE := -flto -fwhole-program
 else
     $(error Target environment $(TARGET_ENV) is not supported)
 endif
 
 
 # Source and object files needed to create the library
-SOURCES = ../src-disl-agent/common.c ../src-disl-agent/jvmtiutil.c \
-	shared/buffer.c shared/buffpack.c shared/blockingqueue.c \
+SOURCES = bytecode.c common.c jvmtiutil.c connection.c \
+	connpool.c msgchannel.c network.c classparser.c \
+	dislagent.c shared/buffer.c shared/buffpack.c shared/blockingqueue.c \
 	shared/threadlocal.c shared/messagetype.c \
-	tagger.c sender.c dislreagent.c pbmanager.c redispatcher.c netref.c \
+	tagger.c sender.c pbmanager.c redispatcher.c netref.c \
 	globalbuffer.c tlocalbuffer.c freehandler.c
 
-HEADERS = $(wildcard *.h)
-GENSRCS =
+HEADERS = $(wildcard *.h) codeflags.h
+GENSRCS = bytecode.c codeflags.h
 OBJECTS = $(SOURCES:%.c=%.o)
 SRCDEPS = $(SOURCES:%.c=%.d)
 
@@ -83,9 +96,7 @@ CFLAGS_LD += -shared
 
 #
 # For non-MinGW targets, use position independent code
-# and dynamically link to the pthread library. When
-# building the library as a whole, tell GCC to build
-# a shared library as well.
+# and dynamically link to the pthread library.
 #
 ifneq (MinGW,$(TARGET_ENV))
     CFLAGS += -fPIC
@@ -96,7 +107,6 @@ endif
 CFLAGS += -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/$(JDK_TARGET)
 
 # Source code options
-#CFLAGS += -W -Wall -Wextra -Wno-unused-parameter
 CFLAGS += -std=gnu99 -W -Wall -Wextra -Wno-unused-parameter
 
 # Fix-up quirks before first target
@@ -119,24 +129,27 @@ whole:
 debug:
 	@$(MAKE) DEBUG=1
 
+# Generated files
+
+bytecode.c:
+	ant -f ../build.xml prepare-disl-agent-bytecode
+
+codeflags.h:
+	ant -f ../build.xml prepare-disl-agent-codeflags
+
 
 # Compilation and linking targets
 
 ifneq (,$(WHOLE))
 
-#
-# Despite the GCC documentation saying that -flto should not be used with
-# -fwhole-program, the option needs to be there, otherwise GCC produces a
-# library with undefined symbols (bypass bytecode) despite them being present.
-#
-CFLAGS += -DWHOLE -flto $(CFLAGS_WHOLE)
+CFLAGS += -DWHOLE $(CFLAGS_WHOLE)
 
 $(LIBRARY): $(HEADERS) $(SOURCES)
 	$(CC) $(CFLAGS) $(TARGET_ARCH) $(CFLAGS_LD) $(SOURCES) $(LIBS) $(OUTPUT_OPTION)
 
 else
 
-CFLAGS += -flto
+CFLAGS += $(CFLAGS_PARTS)
 
 $(LIBRARY): $(OBJECTS)
 	$(CC) $(CFLAGS) $(TARGET_ARCH) $(CFLAGS_LD) $(OBJECTS) $(LIBS) $(OUTPUT_OPTION)

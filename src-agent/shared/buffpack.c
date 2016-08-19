@@ -1,42 +1,4 @@
-#ifndef _BUFFPACK_H
-#define	_BUFFPACK_H
-
-#if defined (__APPLE__) && defined (__MACH__)
-
-#include <machine/endian.h>
-
-#if BYTE_ORDER == BIG_ENDIAN
-#define htobe64(x) (x)
-#else // BYTE_ORDER != BIG_ENDIAN
-#define htobe64(x) __DARWIN_OSSwapInt64((x))
-#endif
-
-#else // !(__APPLE__ && __MACH__)
-#include <endian.h>
-#endif
-
-// Disabled check to make it compile under OS X with clang/LLVM.
-//#ifndef __STDC_IEC_559__
-//#error "Requires IEEE 754 floating point!"
-//#endif
-
-#include "jvmtihelper.h"
-
-#include "buffer.h"
-
-// interpret bytes differently
-union float_jint {
-
-	float f;
-	jint i;
-};
-
-// interpret bytes differently
-union double_jlong {
-
-	double d;
-	jlong l;
-};
+#include "buffpack.h"
 
 void pack_boolean(buffer * buff, jboolean to_send) {
 	buffer_fill(buff, &to_send, sizeof(jboolean));
@@ -96,4 +58,20 @@ void pack_bytes(buffer * buff, const void * data, jint size) {
 	buffer_fill(buff, data, size);
 }
 
-#endif	/* _BUFFPACK_H */
+void buff_put_short(buffer * buff, size_t buff_pos, jshort to_put) {
+  // put the short at the position in network order
+  jshort nts = htons(to_put);
+  buffer_fill_at_pos(buff, buff_pos, &nts, sizeof(jshort));
+}
+
+void buff_put_int(buffer * buff, size_t buff_pos, jint to_put) {
+  // put the int at the position in network order
+  jint nts = htonl(to_put);
+  buffer_fill_at_pos(buff, buff_pos, &nts, sizeof(jint));
+}
+
+void buff_put_long(buffer * buff, size_t buff_pos, jlong to_put) {
+  // put the long at the position in network order
+  jlong nts = htobe64(to_put);
+  buffer_fill_at_pos(buff, buff_pos, &nts, sizeof(jlong));
+}

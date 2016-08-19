@@ -303,6 +303,7 @@
 
 		<property name="disl.agent.lib" value="${dl.prefix}${disl.agent.lib.base}${dl.suffix}"/>
 		<property name="shvm.agent.lib" value="${dl.prefix}${shvm.agent.lib.base}${dl.suffix}"/>
+		<property name="merged.agent.lib" value="${dl.prefix}${merged.agent.lib.base}${dl.suffix}"/>
 	</target>
 
 
@@ -669,6 +670,18 @@
 		<copy file="${src.shvm.agent}/${shvm.agent.lib}" todir="${out.lib}"/>
 	</target>
 
+
+	<!-- Merged agent -->
+	<target name="compile-agent">
+		<exec executable="make" dir="${src.merged.agent}">
+			<arg value="WHOLE=1"/>
+		</exec>
+	</target>
+
+
+	<target name="build-agent" depends="compile-agent,-determine-lib-names">
+		<copy file="${src.merged.agent}/${merged.agent.lib}" todir="${out.lib}"/>
+	</target>
 
 	<!-- JUnit tests and DiSL/Shadow VM test suites -->
 
@@ -1044,9 +1057,9 @@
 
 	<!-- Summary targets -->
 
-	<target name="compile" depends="compile-disl,compile-disl-agent,compile-shvm,compile-shvm-agent" description="Compiles DiSL, Shadow VM, and the JVM agents for both."/>
+	<target name="compile" depends="compile-disl,compile-agent,compile-shvm" description="Compiles DiSL, Shadow VM, and the JVM agents for both."/>
 
-	<target name="build" depends="build-disl,build-disl-agent,build-shvm,build-shvm-agent,copy-asm" description="Builds DiSL and Shadow VM, without documentation."/>
+	<target name="build" depends="build-disl,build-agent,build-shvm,copy-asm" description="Builds DiSL and Shadow VM, without documentation."/>
 
 	<target name="eclipse" depends="download-sources,build-eclipse-agent,build-disl-bypass" description="Creates libraries for developing DiSL under Eclipse."/>
 
@@ -1118,6 +1131,10 @@
 		</exec>
 
 		<exec executable="make" dir="${src.shvm.agent}">
+			<arg value="cleanall"/>
+		</exec>
+
+		<exec executable="make" dir="${src.merged.agent}">
 			<arg value="cleanall"/>
 		</exec>
 

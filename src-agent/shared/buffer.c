@@ -1,20 +1,11 @@
-#ifndef _BUFFER_H
-#define	_BUFFER_H
-
-#include <stdlib.h>
 #include <string.h>
 
-#include "jvmtihelper.h"
+#include "buffer.h"
+
+#include "../../src-disl-agent/jvmtiutil.h"
 
 // initial buffer size
-static const size_t INIT_BUFF_SIZE = 512;
-
-typedef struct {
-	unsigned char * buff;
-	size_t occupied;
-	size_t capacity;
-} buffer;
-
+#define INIT_BUFF_SIZE 512
 // ******************* Buffer routines *******************
 
 void buffer_alloc(buffer * b) {
@@ -61,10 +52,9 @@ void buffer_fill(buffer * b, const void * data, size_t data_length) {
 void buffer_fill_at_pos(buffer * b, size_t pos, const void * data,
 		size_t data_length) {
 
-	// space is not filled already - error
-	if(b->occupied < pos + data_length) {
-		check_error(TRUE, "Filling buffer at non-occupied position.");
-	}
+  // space is not filled already - error
+  check_error(b->occupied < pos + data_length,
+      "Filling buffer at non-occupied position.");
 
 	memcpy(b->buff + pos, data, data_length);
 }
@@ -80,5 +70,3 @@ size_t buffer_filled(buffer * b) {
 void buffer_clean(buffer * b) {
 	b->occupied = 0;
 }
-
-#endif	/* _BUFFER_H */
