@@ -735,6 +735,10 @@
 
  }
 
+// ****************************************************************************
+// REAGENT EVENTS
+// ****************************************************************************
+
  // registers all native methods so they can be used during VM init phase
 void JNICALL jvmti_callback_class_prepare_hook(jvmtiEnv *jvmti_env,
     JNIEnv* jni_env, jthread thread, jclass klass) {
@@ -772,7 +776,6 @@ void JNICALL jvmti_callback_thread_end_hook(jvmtiEnv *jvmti_env,
     JNIEnv* jni_env, jthread thread) {
   redispatcher_thread_end();
 }
-
 
 // ****************************************************************************
 // AGENT ENTRY POINT: ON LOAD

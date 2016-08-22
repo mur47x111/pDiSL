@@ -32,6 +32,12 @@ public final class DiSLServer {
     private static final String PROP_CONT = "dislserver.continuous";
     private static final boolean continuous = Boolean.getBoolean(PROP_CONT);
 
+    private static final String PROP_DEBUG = "debug";
+    private static final boolean debug = Boolean.getBoolean(PROP_DEBUG);
+
+//    private static final String PROP_PORT = "dislreserver.port";
+//    private static final int DEFAULT_PORT = 11218;
+
     //
 
     private static final String __PID_FILE__ = "server.pid.file";

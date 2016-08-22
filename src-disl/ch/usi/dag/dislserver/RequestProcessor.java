@@ -57,10 +57,10 @@ final class RequestProcessor {
                 classBytes.length, Strings.join ("+", options)
             );
         }
-
-        if (!className.startsWith("java") && !className.startsWith("sun")){
-            __log.debug("not java/sun");
-        }
+//
+//        if (!className.startsWith("java") && !className.startsWith("sun")){
+//            __log.debug("not java/sun");
+//        }
 
         //
         // If requested, dump the uninstrumented byte code, instrument the
