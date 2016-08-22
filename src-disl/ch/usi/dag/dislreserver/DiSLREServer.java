@@ -24,23 +24,6 @@ import ch.usi.dag.util.logging.Logger;
 
 public abstract class DiSLREServer {
 
-    private static final Logger __log = Logging.getPackageInstance ();
-
-    //
-
-    private static final String PROP_DEBUG = "debug";
-    private static final boolean debug = Boolean.getBoolean(PROP_DEBUG);
-
-    private static final String PROP_PORT = "dislreserver.port";
-    private static final int DEFAULT_PORT = 11218;
-
-    //
-
-    private static final String __PID_FILE__ = "server.pid.file";
-    private static final String __STATUS_FILE__ = "server.status.file";
-
-    //
-
     public static void main (final String [] args) {
         __log.debug ("server starting");
         __serverStarting ();
