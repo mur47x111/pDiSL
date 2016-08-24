@@ -7,3 +7,4 @@ libdislreagent.jnilib
 examples/*/build
 out
 testAll-output
+libdislagents.jnilib

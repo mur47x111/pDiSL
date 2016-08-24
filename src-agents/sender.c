@@ -21,7 +21,8 @@
 
 // defaults - be sure that space in host_name is long enough
 static const char * DEFAULT_HOST = "localhost";
-static const char * DEFAULT_PORT = "11218";
+// static const char * DEFAULT_PORT = "11218";
+static const char * DEFAULT_PORT = "11217";
 
 // port and name of the instrumentation server
 static char host_name[1024];
@@ -125,8 +126,11 @@ static void *sender_loop(void * obj) {
   connection->recv_bytes = 0;
 #endif
 
-  struct setup_message request;
-  request.flags = ANALYSIS_MESSAGE;
+  struct setup_message request = {
+    .flags = ANALYSIS_MESSAGE,
+    .msg_length = strlen("examples/dispatch/build/example-inst.jar"),
+    .msg = (unsigned char *) "examples/dispatch/build/example-inst.jar",
+  };
   message_send_setup (connection, &request);
 
   struct setup_message response;
