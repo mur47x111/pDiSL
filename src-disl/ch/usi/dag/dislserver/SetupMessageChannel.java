@@ -6,34 +6,34 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
 
-final class MessageChannel implements Closeable {
-
+/**
+ * Created by alexandernorth on 24/08/16.
+ */
+public class SetupMessageChannel implements Closeable {
     private final SocketChannel __socket;
 
-    private final ByteBuffer __head = ByteBuffer.allocateDirect (12).order (ByteOrder.BIG_ENDIAN);
+    private final ByteBuffer __head = ByteBuffer.allocateDirect (8).order (ByteOrder.BIG_ENDIAN);
     private ByteBuffer __body = ByteBuffer.allocateDirect (128 * 1024);
 
     private final ByteBuffer [] __sendBuffers = new ByteBuffer [] {
-        __head, null, null
+            __head, null
     };
 
     //
 
-    public MessageChannel (final SocketChannel socket) {
+    public SetupMessageChannel(final SocketChannel socket) {
         __socket = socket;
     }
 
     //
 
-    public Message recvMessage () throws IOException {
+    public SetupMessage recvMessage () throws IOException {
         //
         // request protocol:
         //
-        // java int - request flags
-        // java int - control data length (cdl)
-        // java int - payload data length (pdl)
-        // bytes[cdl] - control data (contains class name)
-        // bytes[pdl] - payload data (contains class code)
+        // java int - flags
+        // java int - message length (ml)
+        // bytes[ml] - message
         //
 
         __head.rewind ();
@@ -47,12 +47,11 @@ final class MessageChannel implements Closeable {
         __head.rewind ();
 
         final int flags = __head.getInt ();
-        final int controlLength = __head.getInt ();
-        final int payloadLength = __head.getInt ();
+        final int messageLength = __head.getInt ();
 
         //
 
-        __ensureBodyCapacity (controlLength + payloadLength);
+        __ensureBodyCapacity (messageLength);
 
         __body.rewind ();
 
@@ -64,17 +63,14 @@ final class MessageChannel implements Closeable {
 
         __body.rewind ();
 
-        final byte [] control = new byte [controlLength];
-        __body.get (control);
+        final byte [] message = new byte [messageLength];
+        __body.get (message);
 
-        final byte [] payload = new byte [payloadLength];
-        __body.get (payload);
-
-        return new Message (flags, control, payload);
+        return new SetupMessage(flags, new String(message));
     }
 
 
-    public void sendMessage (final Message message) throws IOException {
+    public void sendMessage (final SetupMessage message) throws IOException {
         //
         // response protocol:
         //
@@ -87,18 +83,14 @@ final class MessageChannel implements Closeable {
 
         __head.rewind ();
 
-        __head.putInt (message.flags ());
+        __head.putInt (message.getFlags ());
 
-        final int controlLength = message.control ().length;
-        __head.putInt (controlLength);
-
-        final int payloadLength = message.payload ().length;
-        __head.putInt (payloadLength);
+        final int msgLength = message.getMsg ().getBytes().length;
+        __head.putInt (msgLength);
 
         //
 
-        __sendBuffers [1] = ByteBuffer.wrap (message.control ());
-        __sendBuffers [2] = ByteBuffer.wrap (message.payload ());
+        __sendBuffers [1] = ByteBuffer.wrap (message.getMsg ().getBytes());
 
         //
 
@@ -124,10 +116,8 @@ final class MessageChannel implements Closeable {
         return (value + fill) & mask;
     }
 
-
     @Override
-    public void close () throws IOException {
-        __socket.close ();
+    public void close() throws IOException {
+        __socket.close();
     }
-
 }

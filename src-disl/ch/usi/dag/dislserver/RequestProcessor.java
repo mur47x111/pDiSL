@@ -45,7 +45,7 @@ final class RequestProcessor {
 
     //
 
-    public Message process (final Message request) throws DiSLServerException {
+    public InstrMessage process (final InstrMessage request) throws DiSLServerException {
         final byte [] classBytes = request.payload ();
         final String className = __getClassName (request.control (), classBytes);
         final Set <CodeOption> options = CodeOption.setOf (request.flags ());
@@ -83,10 +83,10 @@ final class RequestProcessor {
                     __dumpClass (newClassBytes, className, instrPath);
                 }
 
-                return Message.createClassModifiedResponse (newClassBytes);
+                return InstrMessage.createClassModifiedResponse (newClassBytes);
 
             } else {
-                return Message.createNoOperationResponse ();
+                return InstrMessage.createNoOperationResponse ();
             }
 
         } catch (final Exception e) {

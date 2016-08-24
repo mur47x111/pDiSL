@@ -3,11 +3,13 @@
 #include "jvmtiutil.h"
 #include "connection.h"
 #include "network.h"
-#include "msgchannel.h"
+// #include "msgchannel.h"
 
 #include "bytecode.h"
 #include "classparser.h"
 #include "codeflags.h"
+
+#include "message.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -250,7 +252,7 @@
 	// send the it to the server. Receive the response and release the
 	// connection again.
 	//
- 	struct message request = {
+ 	struct instrumentation_message request = {
  		.message_flags = request_flags,
  		.control_size = (class_name != NULL) ? strlen (class_name) : 0,
  		.classcode_size = class_def->class_byte_count,
@@ -261,10 +263,10 @@
 	//
 
  	struct connection * conn = network_acquire_connection ();
- 	message_send (conn, &request);
+ 	message_send_instr (conn, &request);
 
- 	struct message response;
- 	message_recv (conn, &response);
+ 	struct instrumentation_message response;
+ 	message_recv_instr (conn, &response);
  	network_release_connection (conn);
 
 	//
@@ -310,45 +312,43 @@
 	// send the it to the server. Receive the response and release the
 	// connection again.
 	//
- 	struct message request = {
- 		.message_flags = CF_SETUP_MESSAGE,
- 		.control_size = 0,
- 		.classcode_size = strlen(config->instrumentation_jar_path),
- 		.control = (unsigned char *) NULL,
- 		.classcode = (unsigned char *) config->instrumentation_jar_path,
+ 	struct setup_message request = {
+ 		.flags = INSTRUMENTATION_MESSAGE,
+ 		.msg_length = strlen(config->instrumentation_jar_path),
+ 		.msg = (unsigned char *) config->instrumentation_jar_path,
  	};
 
 	//
 
  	struct connection * conn = network_acquire_connection ();
- 	message_send (conn, &request);
+ 	message_send_setup (conn, &request);
 
- 	struct message response;
- 	message_recv (conn, &response);
+ 	struct setup_message response;
+ 	message_recv_setup (conn, &response);
  	network_release_connection (conn);
 
 	//
 	// Check if error occurred on the server.
 	// The control field of the response contains the error message.
 	//
- 	if (response.control_size > 0) {
+ 	if (response.flags != ~0) {
  		fprintf (
  			stderr, "%sError setting up server session:\n%s\n",
- 			ERROR_PREFIX, response.control
+ 			ERROR_PREFIX, response.msg
  			);
 
  		exit (ERROR_SERVER);
  	}
 
- 	if (response.message_flags != CF_SETUP_MESSAGE)
- 	{
- 		fprintf (
- 			stderr, "%sThe server did not respond to the setup message as expected. Perhaps it is an outdated version.\n",
- 			ERROR_PREFIX
- 			);
+ 	// if (response.message_flags != CF_SETUP_MESSAGE)
+ 	// {
+ 	// 	fprintf (
+ 	// 		stderr, "%sThe server did not respond to the setup message as expected. Perhaps it is an outdated version.\n",
+ 	// 		ERROR_PREFIX
+ 	// 		);
 
- 		exit (ERROR_SERVER);
- 	}
+ 	// 	exit (ERROR_SERVER);
+ 	// }
 
  	printf("Server is configured.\n");
 

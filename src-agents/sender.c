@@ -13,6 +13,9 @@
 
 #include "jvmtiutil.h"
 
+#include "network.h"
+#include "message.h"
+
 
 // ******************* Communication *******************
 
@@ -109,6 +112,36 @@ static volatile int no_sending_work = 0;
 
 static void *sender_loop(void * obj) {
   int sockfd = open_connection();
+
+  struct connection * connection =
+    (struct connection *) malloc (sizeof (struct connection));
+  check_error (connection == NULL, "failed to allocate connection structure");
+
+  connection->sockfd = sockfd;
+  list_init (&connection->cp_link);
+
+#ifdef DEBUG
+  connection->sent_bytes = 0;
+  connection->recv_bytes = 0;
+#endif
+
+  struct setup_message request;
+  request.flags = ANALYSIS_MESSAGE;
+  message_send_setup (connection, &request);
+
+  struct setup_message response;
+  message_recv_setup (connection, &response);
+
+  free(connection);
+
+  if (response.flags == ~0)
+  {
+    fprintf(stderr, "Setup reserver\n");
+  }else{
+    fprintf(stderr, "Problem: %s\n", response.msg);
+  }
+
+
 
   // exit when the jvm is terminated and there are no msg to process
   while (!(no_sending_work && bq_length(&send_q) == 0)) {

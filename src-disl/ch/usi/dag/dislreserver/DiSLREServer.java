@@ -24,6 +24,27 @@ import ch.usi.dag.util.logging.Logger;
 
 public abstract class DiSLREServer {
 
+    private static final Logger __log = ch.usi.dag.disl.util.Logging.getPackageInstance ();
+
+    //
+
+    private static final String PROP_PORT = "dislserver.port";
+    private static final int DEFAULT_PORT = 11217;
+
+    private static final String PROP_CONT = "dislserver.continuous";
+    private static final boolean continuous = Boolean.getBoolean(PROP_CONT);
+
+    private static final String PROP_DEBUG = "debug";
+    private static final boolean debug = Boolean.getBoolean(PROP_DEBUG);
+
+//    private static final String PROP_PORT = "dislreserver.port";
+//    private static final int DEFAULT_PORT = 11218;
+
+    //
+
+    private static final String __PID_FILE__ = "server.pid.file";
+    private static final String __STATUS_FILE__ = "server.status.file";
+
     public static void main (final String [] args) {
         __log.debug ("server starting");
         __serverStarting ();
@@ -56,7 +77,7 @@ public abstract class DiSLREServer {
                 "connection from %s", clientSocket.getRemoteAddress ()
             );
 
-            processRequests (clientSocket.socket ());
+//            processRequests (clientSocket.socket ());
             clientSocket.close ();
 
         } catch (final ClosedByInterruptException cbie) {
@@ -74,64 +95,6 @@ public abstract class DiSLREServer {
         //
 
         __log.debug ("server shutting down");
-    }
-
-
-    private static void processRequests (final Socket sock) {
-        try {
-            final DataInputStream is = new DataInputStream (
-                new BufferedInputStream (sock.getInputStream ()));
-            final DataOutputStream os = new DataOutputStream (
-                new BufferedOutputStream (sock.getOutputStream ()));
-
-            REQUEST_LOOP: while (true) {
-                final byte requestNo = is.readByte ();
-                if (RequestDispatcher.dispatch (requestNo, is, os, debug)) {
-                    break REQUEST_LOOP;
-                }
-            }
-
-        } catch (final Exception e) {
-            __logError (e);
-        }
-    }
-
-
-    private static void __logError (final Throwable throwable) {
-        if (throwable instanceof DiSLREServerException) {
-            __logNestedErrors (throwable);
-
-            if (__log.debugIsLoggable ()) {
-                __log.debug (__getFullMessage (throwable));
-            }
-
-        } else {
-            // some other exception
-            __log.error ("fatal error: %s", __getFullMessage (throwable));
-        }
-    }
-
-
-    private static void __logNestedErrors (final Throwable throwable) {
-        String prefix = "server error: ";
-        Throwable current = throwable;
-
-        do {
-            final String message = throwable.getMessage ();
-            if (message != null) {
-                __log.error ("%s%s", prefix, message);
-            }
-
-            prefix = "\t";
-            current = throwable.getCause ();
-        } while (current != null);
-    }
-
-
-    private static String __getFullMessage (final Throwable t) {
-        final StringWriter result = new StringWriter ();
-        t.printStackTrace (new PrintWriter (result));
-        return result.toString ();
     }
 
     //

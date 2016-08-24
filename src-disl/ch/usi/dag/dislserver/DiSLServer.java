@@ -2,15 +2,12 @@ package ch.usi.dag.dislserver;
 
 import ch.usi.dag.disl.exception.DiSLException;
 import ch.usi.dag.disl.util.Logging;
+import ch.usi.dag.dislreserver.DiSLREServerException;
+import ch.usi.dag.dislreserver.reqdispatch.RequestDispatcher;
 import ch.usi.dag.util.logging.Logger;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.StandardSocketOptions;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -60,6 +57,9 @@ public final class DiSLServer {
 
         private final SocketChannel __clientSocket;
         private final Thread __serverThread;
+        private RequestProcessor __requestProcessor;
+        final CounterSet <ElapsedTime> stats = new CounterSet  <ElapsedTime> (ElapsedTime.class);
+        final IntervalTimer <ElapsedTime> timer = new IntervalTimer <ElapsedTime> (ElapsedTime.class);
 
         //
 
@@ -69,119 +69,55 @@ public final class DiSLServer {
         ) {
             __clientSocket = clientSocket;
             __serverThread = serverThread;
+            __requestProcessor = null;
         }
 
 
         @Override
         public void run () {
             __workerCount.incrementAndGet ();
-            RequestProcessor __requestProcessor = null;
             try (
-                final MessageChannel mc = new MessageChannel (__clientSocket);
+                    final InstrMessageChannel mc = new InstrMessageChannel(__clientSocket);
+                    final SetupMessageChannel smc = new SetupMessageChannel(__clientSocket);
             ) {
                 //
                 // Process requests until a shutdown request is received, a
                 // communication error occurs, or an internal error occurs.
                 //
-                final CounterSet <ElapsedTime> stats = new CounterSet  <ElapsedTime> (ElapsedTime.class);
-                final IntervalTimer <ElapsedTime> timer = new IntervalTimer <ElapsedTime> (ElapsedTime.class);
-
 //                Boolean to determine whether or not to enter the REQUEST_LOOP - if we have encountered errors, don't loop and go to end.
                 boolean shouldEnterRequestLoop = true;
                 URL jarUrl = null;
 
-                try {
-                    Message request = mc.recvMessage();
-                    if (!request.isSetupMessage()){
-                        mc.sendMessage (
-                                Message.createErrorResponse ("Setup message not received before first request.")
-                        );
-                        shouldEnterRequestLoop = false;
-                    } else {
+                SetupMessage sm = smc.recvMessage();
+                String jarPath = sm.getMsg();
+
 //                        Received setup message. Try to locate and load appropriate JAR
-                        File jarFile = new File(request.instrumentationJarPath());
 
+                File jarFile = null;
+                if (jarPath != null) {
+                    jarFile = new File(jarPath);
+                }
 //                    Some checks to ensure we have this jar, report different errors back to the client.
-                        if (jarFile.exists() && jarFile.isFile()){
-
-                            if (jarFile.canRead()) {
-
-                                jarUrl = jarFile.toURI().toURL();
-                                __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
-                                mc.sendMessage(Message.createSetupSucceededResponse());
-
-                            } else {
-
-                                mc.sendMessage (
-                                        Message.createErrorResponse ("Instrumentation jar cannot be read.")
-                                );
-                                shouldEnterRequestLoop = false;
-
-                            }
-
-                        }else{
-
-                            mc.sendMessage (
-                                    Message.createErrorResponse ("Invalid path or file for instrumentation jar.")
-                            );
-                            shouldEnterRequestLoop = false;
-
-                        }
+                if (jarFile != null && jarFile.exists() && jarFile.isFile()){
+                    if (jarFile.canRead()) {
+                        jarUrl = jarFile.toURI().toURL();
+                    } else {
+                        smc.sendMessage (SetupMessage.setupFailedMessage("Instrumentation jar cannot be read."));
+                        shouldEnterRequestLoop = false;
+                        jarUrl = null;
                     }
-                } catch (final DiSLException de) {
-                    //
-                    // Error creating request processor. Report it to the client
-                    // and don't let request loop start.
-                    //
-                    mc.sendMessage (
-                            Message.createErrorResponse (de.getMessage ())
-                    );
+                }else{
+                    mc.sendMessage (InstrMessage.createErrorResponse ("Invalid path or file for instrumentation jar."));
                     shouldEnterRequestLoop = false;
+                    jarUrl = null;
                 }
 
-                REQUEST_LOOP: while (shouldEnterRequestLoop) {
-                    timer.reset ();
-
-                    final Message request = mc.recvMessage ();
-                    timer.mark (ElapsedTime.RECEIVE);
-
-                    if (request.isShutdown ()) {
-                        break REQUEST_LOOP;
-                    }
-
-
-                    //
-                    // Process the request and send the response to the client.
-                    // Update the timing stats if everything goes well.
-                    //
-                    try {
-//                        `__requestprocessor` can never be null at this point - the loop is not entered if it is.
-                        final Message response = __requestProcessor.process (request);
-                        timer.mark (ElapsedTime.PROCESS);
-
-                        mc.sendMessage (response);
-                        timer.mark (ElapsedTime.TRANSMIT);
-
-                        stats.update (timer);
-
-                    } catch (final DiSLServerException dse) {
-                        //
-                        // Error during instrumentation. Report it to the client
-                        // and stop receiving requests from this connection.
-                        //
-                        mc.sendMessage (
-                                Message.createErrorResponse (dse.getMessage ())
-                        );
-
-                        break REQUEST_LOOP;
-                    }
+                if (jarUrl != null) {
+                    if (sm.getType() == Message.INSTRUMENTATION_MESSAGE)
+                        dislLoop(mc, smc, jarUrl);
+                    else
+                        processRequests (__clientSocket.socket ());
                 }
-
-                //
-                // Merge thread-local stats with global stats when leaving
-                // the request loop.
-                //
-                __globalStats.update (stats);
 
             } catch (final IOException ioe) {
                 //
@@ -198,7 +134,6 @@ public final class DiSLServer {
 
             }
 
-
             //
             // If there are no more workers left and we are not operating
             // in continuous mode, shut the server down.
@@ -210,6 +145,118 @@ public final class DiSLServer {
             }
         }
 
+        private void dislLoop(final InstrMessageChannel mc, final SetupMessageChannel smc, final URL jarUrl) throws IOException{
+            try {
+                __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
+                smc.sendMessage(SetupMessage.setupSuccessfulMessage());
+            } catch (final DiSLException de) {
+                //
+                // Error creating request processor. Report it to the client
+                // and don't let request loop start.
+                //
+                mc.sendMessage (InstrMessage.createErrorResponse (de.getMessage ()));
+                return;
+            }
+
+            REQUEST_LOOP: while (true) {
+                timer.reset ();
+
+                final InstrMessage request = mc.recvMessage ();
+                timer.mark (ElapsedTime.RECEIVE);
+
+                if (request.isShutdown ()) {
+                    break REQUEST_LOOP;
+                }
+
+
+                //
+                // Process the request and send the response to the client.
+                // Update the timing stats if everything goes well.
+                //
+                try {
+//                        `__requestprocessor` can never be null at this point - the loop is not entered if it is.
+                    final InstrMessage response = __requestProcessor.process (request);
+                    timer.mark (ElapsedTime.PROCESS);
+
+                    mc.sendMessage (response);
+                    timer.mark (ElapsedTime.TRANSMIT);
+
+                    stats.update (timer);
+
+                } catch (final DiSLServerException dse) {
+                    //
+                    // Error during instrumentation. Report it to the client
+                    // and stop receiving requests from this connection.
+                    //
+                    mc.sendMessage (
+                            InstrMessage.createErrorResponse (dse.getMessage ())
+                    );
+
+                    break REQUEST_LOOP;
+                }
+            }
+
+            //
+            // Merge thread-local stats with global stats when leaving
+            // the request loop.
+            //
+            __globalStats.update (stats);
+        }
+
+        private void processRequests (final Socket sock) {
+            try {
+                final DataInputStream is = new DataInputStream (
+                        new BufferedInputStream(sock.getInputStream ()));
+                final DataOutputStream os = new DataOutputStream (
+                        new BufferedOutputStream (sock.getOutputStream ()));
+
+                REQUEST_LOOP: while (true) {
+                    final byte requestNo = is.readByte ();
+                    if (RequestDispatcher.dispatch (requestNo, is, os, debug)) {
+                        break REQUEST_LOOP;
+                    }
+                }
+
+            } catch (final Exception e) {
+                __logError (e);
+            }
+        }
+
+        private void __logError (final Throwable throwable) {
+            if (throwable instanceof DiSLREServerException) {
+                __logNestedErrors (throwable);
+
+                if (__log.debugIsLoggable ()) {
+                    __log.debug (__getFullMessage (throwable));
+                }
+
+            } else {
+                // some other exception
+                __log.error ("fatal error: %s", __getFullMessage (throwable));
+            }
+        }
+
+        private void __logNestedErrors (final Throwable throwable) {
+            String prefix = "server error: ";
+            Throwable current = throwable;
+
+            do {
+                final String message = throwable.getMessage ();
+                if (message != null) {
+                    __log.error ("%s%s", prefix, message);
+                }
+
+                prefix = "\t";
+                current = throwable.getCause ();
+            } while (current != null);
+        }
+
+
+        private String __getFullMessage (final Throwable t) {
+            final StringWriter result = new StringWriter ();
+            t.printStackTrace (new PrintWriter (result));
+            return result.toString ();
+        }
     }
 
     //

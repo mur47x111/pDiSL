@@ -71,11 +71,11 @@ endif
 
 # Source and object files needed to create the library
 SOURCES = bytecode.c common.c jvmtiutil.c connection.c \
-	connpool.c msgchannel.c network.c classparser.c \
+	connpool.c network.c classparser.c \
 	dislagent.c shared/buffer.c shared/buffpack.c shared/blockingqueue.c \
 	shared/threadlocal.c shared/messagetype.c \
 	tagger.c sender.c pbmanager.c redispatcher.c netref.c \
-	globalbuffer.c tlocalbuffer.c freehandler.c
+	globalbuffer.c tlocalbuffer.c freehandler.c message.c
 
 HEADERS = $(wildcard *.h) codeflags.h
 GENSRCS = bytecode.c codeflags.h

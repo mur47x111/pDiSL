@@ -2,7 +2,7 @@
 #include "threads.h"
 #include "connpool.h"
 #include "connection.h"
-#include "msgchannel.h"
+#include "message.h"
 
 #include <assert.h>
 #include <sys/types.h>
@@ -51,13 +51,13 @@ __connection_close_hook (struct connection * conn) {
 	// Send an empty message to the server before closing the connection
 	// to indicate end of processing for that connection.
 	//
-	struct message shutdown = {
+	struct instrumentation_message shutdown = {
 		.message_flags = 0,
 		.control_size = 0, .classcode_size = 0,
 		.control = NULL, .classcode = NULL
 	};
 
-	message_send (conn, &shutdown);
+	message_send_instr (conn, &shutdown);
 }
 
 
