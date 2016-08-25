@@ -58,6 +58,7 @@ public final class DiSLServer {
         private final SocketChannel __clientSocket;
         private final Thread __serverThread;
         private RequestProcessor __requestProcessor;
+        private RequestDispatcher __requestDispatcher;
         final CounterSet <ElapsedTime> stats = new CounterSet  <ElapsedTime> (ElapsedTime.class);
         final IntervalTimer <ElapsedTime> timer = new IntervalTimer <ElapsedTime> (ElapsedTime.class);
 
@@ -70,6 +71,7 @@ public final class DiSLServer {
             __clientSocket = clientSocket;
             __serverThread = serverThread;
             __requestProcessor = null;
+            __requestDispatcher = null;
         }
 
 
@@ -113,10 +115,16 @@ public final class DiSLServer {
                 }
 
                 if (jarUrl != null) {
-                    if (sm.getType() == Message.INSTRUMENTATION_MESSAGE)
+
+                    if (sm.getType() == SetupMessage.MessageType.INSTRUMENTATION_MESSAGE) {
+                        smc.sendMessage(SetupMessage.setupSuccessfulMessage());
                         dislLoop(mc, smc, jarUrl);
-                    else
-                        processRequests (__clientSocket.socket ());
+                    } else if (sm.getType() == SetupMessage.MessageType.ANALYSIS_MESSAGE) {
+                        smc.sendMessage(SetupMessage.setupSuccessfulMessage());
+                        processRequests(__clientSocket.socket(), jarUrl);
+                    } else {
+                        smc.sendMessage(SetupMessage.setupFailedMessage("Invalid setup message"));
+                    }
                 }
 
             } catch (final IOException ioe) {
@@ -148,7 +156,6 @@ public final class DiSLServer {
         private void dislLoop(final InstrMessageChannel mc, final SetupMessageChannel smc, final URL jarUrl) throws IOException{
             try {
                 __requestProcessor = RequestProcessor.newInstanceWithJARUrl(jarUrl);
-                smc.sendMessage(SetupMessage.setupSuccessfulMessage());
             } catch (final DiSLException de) {
                 //
                 // Error creating request processor. Report it to the client
@@ -203,16 +210,18 @@ public final class DiSLServer {
             __globalStats.update (stats);
         }
 
-        private void processRequests (final Socket sock) {
+        private void processRequests (final Socket sock, final URL jarUrl) {
             try {
                 final DataInputStream is = new DataInputStream (
                         new BufferedInputStream(sock.getInputStream ()));
                 final DataOutputStream os = new DataOutputStream (
                         new BufferedOutputStream (sock.getOutputStream ()));
 
+                __requestDispatcher = new RequestDispatcher(jarUrl);
+
                 REQUEST_LOOP: while (true) {
                     final byte requestNo = is.readByte ();
-                    if (RequestDispatcher.dispatch (requestNo, is, os, debug)) {
+                    if (__requestDispatcher.dispatch (requestNo, is, os, debug)) {
                         break REQUEST_LOOP;
                     }
                 }

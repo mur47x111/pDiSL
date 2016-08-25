@@ -2,6 +2,8 @@ package ch.usi.dag.dislreserver.reqdispatch;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,8 +46,9 @@ public final class RequestDispatcher {
     private static Collection <RequestHandler> __handlers;
 
     //
+    public RequestDispatcher(final URL jarUrl){
 
-    static {
+        final URLClassLoader theClassLoader = URLClassLoader.newInstance(new URL[]{jarUrl}, this.getClass().getClassLoader());
         //
         // Register request handlers.
         // The indices should be in sync with the native agent.
@@ -58,14 +61,13 @@ public final class RequestDispatcher {
         requestMap.put (__REQUEST_ID_NEW_CLASS__, new NewClassHandler ());
         requestMap.put (__REQUEST_ID_CLASS_INFO__, new ClassInfoHandler ());
         requestMap.put (__REQUEST_ID_STRING_INFO__, new StringInfoHandler ());
-        requestMap.put (__REQUEST_ID_REGISTER_ANALYSIS__, new RegAnalysisHandler (null));
+        requestMap.put (__REQUEST_ID_REGISTER_ANALYSIS__, new RegAnalysisHandler (theClassLoader));
         requestMap.put (__REQUEST_ID_THREAD_INFO__, new ThreadInfoHandler());
         requestMap.put (__REQUEST_ID_THREAD_END__,  new ThreadEndHandler(anlHndl));
 
         __handlers = Collections.unmodifiableCollection (requestMap.values ());
         __dispatchTable = __createDispatchTable (requestMap);
     }
-
 
     private static RequestHandler [] __createDispatchTable (
         final Map <Byte, RequestHandler> requestMap
@@ -84,7 +86,7 @@ public final class RequestDispatcher {
 
     //
 
-    public static boolean dispatch (
+    public boolean dispatch (
         final byte requestId, final DataInputStream is,
         final DataOutputStream os, boolean debug
     ) throws DiSLREServerException {

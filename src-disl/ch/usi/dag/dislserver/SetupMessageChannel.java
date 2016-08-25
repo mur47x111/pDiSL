@@ -85,12 +85,14 @@ public class SetupMessageChannel implements Closeable {
 
         __head.putInt (message.getFlags ());
 
-        final int msgLength = message.getMsg ().getBytes().length;
+        final byte[] msgBytes = message.getMsg ().getBytes();
+
+        final int msgLength = msgBytes.length;
         __head.putInt (msgLength);
 
         //
 
-        __sendBuffers [1] = ByteBuffer.wrap (message.getMsg ().getBytes());
+        __sendBuffers [1] = ByteBuffer.wrap (msgBytes);
 
         //
 
@@ -98,7 +100,7 @@ public class SetupMessageChannel implements Closeable {
 
         do {
             __socket.write (__sendBuffers);
-        } while (__sendBuffers [2].hasRemaining ());
+        } while (__sendBuffers [1].hasRemaining ());
     }
 
 

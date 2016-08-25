@@ -124,6 +124,7 @@ void message_recv_setup (struct connection * conn, struct setup_message * msg){
     //
 
     jint control_size = ntohl (ints [1]);
+
     uint8_t * control = __alloc_buffer (control_size);
 
     __recv (conn, control, control_size, NULL, 0);

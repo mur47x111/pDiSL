@@ -193,12 +193,6 @@ final class ClassResources {
             } catch (final IOException ioe) {
                 __log.warn (ioe, "failed to enumerate manifest resources");
             }
-// [
-// jar:file:/System/Library/Java/Extensions/MRJToolkit.jar!/META-INF/MANIFEST.MF,
-// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/output/lib/disl-server.jar!/META-INF/MANIFEST.MF,
-// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/output/lib/asm-debug-all.jar!/META-INF/MANIFEST.MF,
-// jar:file:/Users/alexandernorth/Documents/UROP/2016/pDiSL/example-inst.jar!/META-INF/MANIFEST.MF
-// ]
 //            __log.debug("result: %s", result);
             return result.stream ();
         }
