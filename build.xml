@@ -1041,6 +1041,16 @@
 
 
 	<!-- Run target -->
+
+	<target name="run" depends="build">
+		<exec executable="java">
+			<arg value="-cp" />
+			<arg value="${out.lib}/disl-server.jar" />
+			<arg value="ch.usi.dag.dislserver.DiSLServer" />
+		</exec>
+	</target>
+
+
 	<target name="run-continuous" depends="build">
 		<exec executable="java">
 			<arg value="-cp" />
@@ -1053,7 +1063,7 @@
 	<target name="run-debug" depends="build">
 		<exec executable="java">
 			<arg value="-cp" />
-			<arg value="${out.lib}/disl-server.jar:./example-inst.jar" />
+			<arg value="${out.lib}/disl-server.jar" />
 			<arg value="-Ddisl.logging.level=debug" />
 			<arg value="ch.usi.dag.dislserver.DiSLServer" />
 		</exec>
@@ -1062,7 +1072,7 @@
 	<target name="run-debug-continuous" depends="build">
 		<exec executable="java">
 			<arg value="-cp" />
-			<arg value="${out.lib}/disl-server.jar:./example-inst.jar" />
+			<arg value="${out.lib}/disl-server.jar" />
 			<arg value="-Ddisl.logging.level=debug" />
 			<arg value="-Ddislserver.continuous=true" />
 			<arg value="ch.usi.dag.dislserver.DiSLServer" />

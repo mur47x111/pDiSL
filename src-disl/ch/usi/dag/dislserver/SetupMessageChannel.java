@@ -74,11 +74,9 @@ public class SetupMessageChannel implements Closeable {
         //
         // response protocol:
         //
-        // java int - response flags
-        // java int - control data length (cdl)
-        // java int - payload data length (pdl)
-        // bytes[cdl] - control data (nothing, or error message)
-        // bytes[pdl] - payload data (instrumented class code)
+        // java int - flags
+        // java int - message length (ml)
+        // bytes[ml] - message
         //
 
         __head.rewind ();

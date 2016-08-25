@@ -87,7 +87,6 @@ public final class DiSLServer {
                 // communication error occurs, or an internal error occurs.
                 //
 //                Boolean to determine whether or not to enter the REQUEST_LOOP - if we have encountered errors, don't loop and go to end.
-                boolean shouldEnterRequestLoop = true;
                 URL jarUrl = null;
 
                 SetupMessage sm = smc.recvMessage();
@@ -105,12 +104,10 @@ public final class DiSLServer {
                         jarUrl = jarFile.toURI().toURL();
                     } else {
                         smc.sendMessage (SetupMessage.setupFailedMessage("Instrumentation jar cannot be read."));
-                        shouldEnterRequestLoop = false;
                         jarUrl = null;
                     }
                 }else{
                     mc.sendMessage (InstrMessage.createErrorResponse ("Invalid path or file for instrumentation jar."));
-                    shouldEnterRequestLoop = false;
                     jarUrl = null;
                 }
 
