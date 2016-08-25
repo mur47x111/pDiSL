@@ -9,7 +9,9 @@ public class SetupMessage {
 
         INSTRUMENTATION_MESSAGE(Flag.INSTRUMENTATION_MESSAGE),
         ANALYSIS_MESSAGE(Flag.ANALYSIS_MESSAGE),
-        INVALID_MESSAGE(Flag.INVALID_MESSAGE);
+        INVALID_MESSAGE(Flag.INVALID_MESSAGE),
+        SUCCESSFUL_SETUP_MESSAGE(Flag.SUCCESSFUL_SETUP_MESSAGE),
+        FAILED_SETUP_MESSAGE(Flag.FAILED_SETUP_MESSAGE);
 
         private final int __flag;
 
@@ -25,6 +27,11 @@ public class SetupMessage {
             static final int INSTRUMENTATION_MESSAGE = 0;
             static final int ANALYSIS_MESSAGE = 1;
             static final int INVALID_MESSAGE = 2;
+
+
+            static final int SUCCESSFUL_SETUP_MESSAGE = ~0;
+            static final int FAILED_SETUP_MESSAGE = 0;
+
         }
     }
 
@@ -55,10 +62,10 @@ public class SetupMessage {
     }
 
     public final static SetupMessage setupSuccessfulMessage(){
-        return new SetupMessage(~0, "");
+        return new SetupMessage(MessageType.Flag.SUCCESSFUL_SETUP_MESSAGE, "");
     }
 
     public final static SetupMessage setupFailedMessage(String failureMessage){
-        return new SetupMessage(0, failureMessage);
+        return new SetupMessage(MessageType.Flag.FAILED_SETUP_MESSAGE, failureMessage);
     }
 }
